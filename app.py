@@ -1,4 +1,3 @@
-# ...existing code from convert_backend.py, updated as needed...
 from flask import Flask, request, send_file, jsonify, after_this_request, make_response, render_template, send_from_directory
 from werkzeug.utils import secure_filename
 from flask_cors import CORS
@@ -6,6 +5,7 @@ import os
 import tempfile
 import subprocess
 from io import BytesIO
+import zipfile
 
 app = Flask(__name__, template_folder='templates', static_folder='static')
 CORS(app, resources={r"/*": {"origins": "*"}}, supports_credentials=True)  # Ensure CORS for all routes and errors
@@ -49,73 +49,108 @@ def convert():
         response.headers['Access-Control-Allow-Credentials'] = 'true'
         return response
 
-    if 'file' not in request.files:
-        resp = jsonify({'error': 'No file uploaded'})
-        resp.headers['Access-Control-Allow-Origin'] = '*'
-        return resp, 400
-    file = request.files['file']
-    if file.filename == '':
-        resp = jsonify({'error': 'No selected file'})
-        resp.headers['Access-Control-Allow-Origin'] = '*'
-        return resp, 400
-    if not file.filename.lower().endswith('.mp4'):
-        resp = jsonify({'error': 'Only MP4 files are allowed'})
+    # Accept both single and multiple files
+    files = request.files.getlist('file')
+    if not files or files[0].filename == '':
+        resp = jsonify({'error': 'No file(s) uploaded'})
         resp.headers['Access-Control-Allow-Origin'] = '*'
         return resp, 400
 
-    filename = secure_filename(file.filename)
-    with tempfile.TemporaryDirectory() as tmpdir:
-        mp4_path = os.path.join(tmpdir, filename)
-        mp3_path = os.path.join(tmpdir, filename.rsplit('.', 1)[0] + '.mp3')
-        file.save(mp4_path)
-        try:
-            result = subprocess.run(
-                [
-                    'ffmpeg', '-y', '-loglevel', 'error', '-i', mp4_path, '-vn', '-acodec', 'libmp3lame', '-ab', '192k', mp3_path
-                ],
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE
-            )
-            print("FFmpeg command:", 'ffmpeg -y -loglevel error -i', mp4_path, '-vn -acodec libmp3lame -ab 192k', mp3_path)
-            print("MP4 path:", mp4_path, "Exists:", os.path.exists(mp4_path))
-            print("MP3 path (should be created):", mp3_path, "Exists:", os.path.exists(mp3_path))
-            print("FFmpeg return code:", result.returncode)
-            print("FFmpeg stderr:", result.stderr.decode())
-            print("FFmpeg stdout:", result.stdout.decode())
-            if result.returncode != 0 or not os.path.exists(mp3_path):
-                resp = jsonify({'error': 'Conversion failed: ' + result.stderr.decode()})
-                resp.headers['Access-Control-Allow-Origin'] = '*'
-                return resp, 500
-        except Exception as e:
-            print("Exception during conversion:", str(e))
-            resp = jsonify({'error': f'Conversion failed: {str(e)}'})
+    # Validate all files
+    for file in files:
+        if not file.filename.lower().endswith('.mp4'):
+            resp = jsonify({'error': 'Only MP4 files are allowed'})
             resp.headers['Access-Control-Allow-Origin'] = '*'
-            return resp, 500
+            return resp, 400
 
-        # FIX: Read the file into memory before sending, to avoid Windows file lock issues
-        with open(mp3_path, 'rb') as f:
-            mp3_data = f.read()
-
-        @after_this_request
-        def cleanup(response):
+    with tempfile.TemporaryDirectory() as tmpdir:
+        mp3_paths = []
+        for file in files:
+            filename = secure_filename(file.filename)
+            mp4_path = os.path.join(tmpdir, filename)
+            mp3_path = os.path.join(tmpdir, filename.rsplit('.', 1)[0] + '.mp3')
+            file.save(mp4_path)
             try:
-                if os.path.exists(mp3_path):
-                    os.remove(mp3_path)
-            except Exception as cleanup_err:
-                print("Cleanup error:", cleanup_err)
+                result = subprocess.run(
+                    [
+                        'ffmpeg', '-y', '-loglevel', 'error', '-i', mp4_path, '-vn', '-acodec', 'libmp3lame', '-ab', '192k', mp3_path
+                    ],
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE
+                )
+                print(f"Converting: {mp4_path} -> {mp3_path}, returncode={result.returncode}")
+                if result.returncode != 0 or not os.path.exists(mp3_path):
+                    print(f"Failed: {filename}, stderr={result.stderr.decode()}")
+                else:
+                    mp3_paths.append(mp3_path)
+            except Exception as e:
+                print(f"Exception for {filename}: {e}")
+
+        print("MP3s created:", mp3_paths)
+
+        # If only one file, return as before
+        if len(mp3_paths) == 1:
+            with open(mp3_paths[0], 'rb') as f:
+                mp3_data = f.read()
+
+            @after_this_request
+            def cleanup(response):
+                try:
+                    for path in mp3_paths:
+                        if os.path.exists(path):
+                            os.remove(path)
+                except Exception as cleanup_err:
+                    print("Cleanup error:", cleanup_err)
+                return response
+
+            response = send_file(
+                BytesIO(mp3_data),
+                as_attachment=True,
+                download_name=os.path.basename(mp3_paths[0]),
+                mimetype='audio/mpeg'
+            )
+            response.headers['Access-Control-Allow-Origin'] = '*'
+            response.headers['Access-Control-Allow-Credentials'] = 'true'
+            response.headers['Access-Control-Allow-Headers'] = 'Content-Type'
+            response.headers['Access-Control-Allow-Methods'] = 'POST, OPTIONS'
             return response
 
-        response = send_file(
-            BytesIO(mp3_data),
-            as_attachment=True,
-            download_name=os.path.basename(mp3_path),
-            mimetype='audio/mpeg'
-        )
-        response.headers['Access-Control-Allow-Origin'] = '*'
-        response.headers['Access-Control-Allow-Credentials'] = 'true'
-        response.headers['Access-Control-Allow-Headers'] = 'Content-Type'
-        response.headers['Access-Control-Allow-Methods'] = 'POST, OPTIONS'
-        return response
+        # If multiple files, zip them
+        if len(mp3_paths) > 1:
+            zip_buffer = BytesIO()
+            with zipfile.ZipFile(zip_buffer, 'w') as zipf:
+                for mp3_path in mp3_paths:
+                    zipf.write(mp3_path, arcname=os.path.basename(mp3_path))
+            zip_buffer.seek(0)
+
+            @after_this_request
+            def cleanup(response):
+                try:
+                    for path in mp3_paths:
+                        if os.path.exists(path):
+                            os.remove(path)
+                except Exception as cleanup_err:
+                    print("Cleanup error:", cleanup_err)
+                return response
+
+            response = send_file(
+                zip_buffer,
+                as_attachment=True,
+                download_name=f'converted_{len(mp3_paths)}_mp3s.zip',
+                mimetype='application/zip'
+            )
+            response.headers['Access-Control-Allow-Origin'] = '*'
+            response.headers['Access-Control-Allow-Credentials'] = 'true'
+            response.headers['Access-Control-Allow-Headers'] = 'Content-Type'
+            response.headers['Access-Control-Allow-Methods'] = 'POST, OPTIONS'
+            response.headers['Content-Disposition'] = f'attachment; filename=converted_{len(mp3_paths)}_mp3s.zip'
+            response.headers['Content-Type'] = 'application/zip'
+            return response
+
+        # If no MP3s were created, return error
+        resp = jsonify({'error': 'No files were converted. Please check your input files.'})
+        resp.headers['Access-Control-Allow-Origin'] = '*'
+        return resp, 500
 
 @app.route('/')
 def index():
