@@ -1,0 +1,219 @@
+<!-- ...your HTML code... -->
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SoundShift - MP4 to MP3 Converter</title>
+    <link rel="stylesheet" href="/static/styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+
+<body>
+    <div class="container">
+        <header>
+            <nav>
+                <div class="logo">SoundShift</div>
+                <ul>
+                    <li><a href="index.html" class="active"><i class="fas fa-home"></i> Home</a></li>
+                    <li><a href="#"><i class="fas fa-info-circle"></i> About</a></li>
+                    <li><a href="tools.html"><i class="fas fa-toolbox"></i> Tools</a></li>
+                    <li><a href="contact.html"><i class="fas fa-envelope"></i> Contact</a></li>
+                </ul>
+                <div class="theme-toggle" id="themeToggleContainer">
+                    <i class="fas fa-sun"></i>
+                    <label class="switch" aria-label="Toggle dark mode">
+                        <input type="checkbox" id="themeToggle" aria-checked="false" >
+                        <span class="slider round"></span>
+                    </label>
+                    <i class="fas fa-moon"></i>
+                </div>
+            </nav>
+        </header>
+
+        <main>
+            <section class="hero">
+                <div class="hero-content">
+                    <h1>Convert MP4 to MP3</h1>
+                    <p>Transform your videos into high-quality audio files</p>
+                    <div class="wave-animation">
+                        <div class="wave"></div>
+                        <div class="wave"></div>
+                        <div class="wave"></div>
+                        <div class="wave"></div>
+                        <div class="wave"></div>
+                        <div class="wave"></div>
+                        <div class="wave"></div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="converter">
+                <div class="converter-card">
+                    <div class="batch-toggle" id="batchToggleContainer">
+                        <span class="batch-label single active" id="singleLabel">Single File</span>
+                        <label class="switch" aria-label="Toggle batch mode">
+                            <input type="checkbox" id="batchToggle" aria-checked="false" />
+                            <span class="slider round"></span>
+                        </label>
+                        <span class="batch-label batch" id="batchLabel">Batch Mode</span>
+                    </div>
+
+                    <div class="upload-area" id="dropZone">
+                        <i class="fas fa-cloud-upload-alt"></i>
+                        <h3 id="uploadTitle">Drag & Drop your MP4 file here</h3>
+                        <p>or</p>
+                        <label for="fileInput" class="upload-btn">Browse Files</label>
+                        <input type="file" id="fileInput" accept="video/mp4" hidden multiple>
+                        <p class="file-info" id="fileInfo">Maximum file size: 500MB</p>
+                        <div id="fileList" class="file-list"></div>
+                    </div>
+
+                    <div class="conversion-options">
+                        <h3>Conversion Options</h3>
+                        <div class="option-tabs">
+                            <button class="option-tab active" data-option="normal">Normal MP3</button>
+                        </div>
+
+                        <div class="option-details" id="normalOptions">
+                            <div class="option-row">
+                                <label>Quality</label>
+                                <select id="quality">
+                                    <option value="320">High (320 kbps)</option>
+                                    <option value="256">Medium (256 kbps)</option>
+                                    <option value="128">Low (128 kbps)</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="progress-container" id="progressContainer" style="display: none;">
+                        <div class="progress-bar-container">
+                            <div class="progress-bar" id="progressBar"></div>
+                        </div>
+                        <div class="progress-text" id="progressText">0%</div>
+                        <div id="conversionStatus" class="conversion-status"></div>
+                    </div>
+
+                    <button id="convertBtn" class="convert-btn" disabled>Convert Now</button>
+                </div>
+            </section>
+
+            <section class="result-section" id="resultSection" style="display: none;">
+                <div class="result-card">
+                    <div class="success-icon">
+                        <i class="fas fa-check-circle"></i>
+                    </div>
+                    <h3>Conversion Complete!</h3>
+                    <p id="resultMessage">Your MP3 file is ready to download</p>
+
+                    <div class="audio-player">
+                        <div class="visualizer-container">
+                            <canvas id="audioVisualizer" width="300" height="60"></canvas>
+                        </div>
+                        <audio id="audioPreview" controls></audio>
+                    </div>
+
+                    <div id="singleFileResult">
+                        <button id="downloadBtn" class="download-btn">
+                            <i class="fas fa-download"></i> Download MP3
+                        </button>
+                    </div>
+
+                    <div id="batchFileResult" style="display: none;">
+                        <button id="downloadAllBtn" class="download-btn">
+                            <i class="fas fa-download"></i> Download All (ZIP)
+                        </button>
+                        <div id="batchDownloadList" class="batch-download-list"></div>
+                    </div>
+
+                    <button id="newConversionBtn" class="new-conversion-btn">
+                        Convert Another File
+                    </button>
+                </div>
+            </section>
+        </main>
+
+        <section class="features">
+            <h2>Why Choose Our Converter</h2>
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-bolt"></i>
+                    </div>
+                    <h3>Fast Conversion</h3>
+                    <p>Convert your files in seconds with our optimized algorithm</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-shield-alt"></i>
+                    </div>
+                    <h3>Secure Processing</h3>
+                    <p>Your files are processed securely and never stored on our servers</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-layer-group"></i>
+                    </div>
+                    <h3>Batch Conversion</h3>
+                    <p>Convert multiple files at once to save time</p>
+                </div>
+            </div>
+        </section>
+
+        <footer>
+            <div class="footer-modern">
+                <div class="footer-main">
+                    <div class="footer-brand">
+                        <span class="footer-logo">SoundShift</span>
+                        <p class="footer-desc">Convert MP4 videos to high-quality MP3 audio instantly and securely.</p>
+                        <div class="footer-social">
+                            <a href="#" title="Twitter"><i class="fab fa-twitter"></i></a>
+                            <a href="#" title="Facebook"><i class="fab fa-facebook-f"></i></a>
+                            <a href="#" title="Instagram"><i class="fab fa-instagram"></i></a>
+                            <a href="#" title="GitHub"><i class="fab fa-github"></i></a>
+                        </div>
+                    </div>
+                    <div class="footer-links-modern">
+                        <div class="footer-column-modern">
+                            <h4>Tools</h4>
+                            <ul>
+                                <li><a href="#">MP4 to MP3</a></li>
+                                <li><a href="#">Audio Enhancer</a></li>
+                                <li><a href="#">Video Converter</a></li>
+                                <li><a href="#">Audio Trimmer</a></li>
+                            </ul>
+                        </div>
+                        <div class="footer-column-modern">
+                            <h4>Company</h4>
+                            <ul>
+                                <li><a href="#">About Us</a></li>
+                                <li><a href="#">Privacy Policy</a></li>
+                                <li><a href="#">Terms of Service</a></li>
+                                <li><a href="#">Contact</a></li>
+                            </ul>
+                        </div>
+                        <div class="footer-column-modern">
+                            <h4>Support</h4>
+                            <ul>
+                                <li><a href="#">Help Center</a></li>
+                                <li><a href="#">FAQ</a></li>
+                                <li><a href="#">Report Issue</a></li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                <div class="footer-bottom">
+                    <span>&copy; 2025 SoundShift. All rights reserved.</span>
+                    <span class="footer-powered">Powered by <a href="#">SoundShift Team</a></span>
+                </div>
+            </div>
+        </footer>
+    </div>
+
+    <script src="/static/updated_script.js"></script>
+    
+</body>
+
+</html>
