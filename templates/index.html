@@ -8,6 +8,7 @@
     <title>SoundShift - MP4 to MP3 Converter</title>
     <link rel="stylesheet" href="/static/styles.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="shortcut icon" href="/static/icons8-sound-3d-fluency-96.png" type="image/x-icon">
 </head>
 
 <body>
@@ -16,15 +17,16 @@
             <nav>
                 <div class="logo">SoundShift</div>
                 <ul>
-                    <li><a href="index.html" class="active"><i class="fas fa-home"></i> Home</a></li>
-                    <li><a href="#"><i class="fas fa-info-circle"></i> About</a></li>
-                    <li><a href="tools.html"><i class="fas fa-toolbox"></i> Tools</a></li>
-                    <li><a href="contact.html"><i class="fas fa-envelope"></i> Contact</a></li>
+                    <li><a href="/" class="active"><i class="fas fa-home"></i> Home</a></li>
+                    <li><a href="/about"><i class="fas fa-info-circle"></i> About</a></li>
+                    <li><a href="/tools"><i class="fas fa-toolbox"></i> Tools</a></li>
+                    <li><a href="/contact"><i class="fas fa-envelope"></i> Contact</a></li>
+
                 </ul>
                 <div class="theme-toggle" id="themeToggleContainer">
                     <i class="fas fa-sun"></i>
                     <label class="switch" aria-label="Toggle dark mode">
-                        <input type="checkbox" id="themeToggle" aria-checked="false" >
+                        <input type="checkbox" id="themeToggle" aria-checked="false">
                         <span class="slider round"></span>
                     </label>
                     <i class="fas fa-moon"></i>
@@ -89,10 +91,33 @@
                     </div>
 
                     <div class="progress-container" id="progressContainer" style="display: none;">
-                        <div class="progress-bar-container">
-                            <div class="progress-bar" id="progressBar"></div>
+                        <div class="progress-status">
+                            <span id="progressStatus">Preparing...</span>
+                            <span id="progressPercentage">0%</span>
                         </div>
-                        <div class="progress-text" id="progressText">0%</div>
+                        <div class="progress-bar-container">
+                            <div class="progress-bar" id="progressBar">
+                                <div class="progress-glow"></div>
+                            </div>
+                        </div>
+                        <div class="progress-details">
+                            <div class="progress-detail">
+                                <span class="detail-label">File:</span>
+                                <span id="currentFile">-</span>
+                            </div>
+                            <div class="progress-detail">
+                                <span class="detail-label">Speed:</span>
+                                <span id="uploadSpeed">0 KB/s</span>
+                            </div>
+                            <div class="progress-detail">
+                                <span class="detail-label">Uploaded:</span>
+                                <span id="uploadedSize">0 KB</span>
+                            </div>
+                            <div class="progress-detail">
+                                <span class="detail-label">Remaining:</span>
+                                <span id="timeRemaining">Calculating...</span>
+                            </div>
+                        </div>
                         <div id="conversionStatus" class="conversion-status"></div>
                     </div>
 
@@ -127,10 +152,6 @@
                         </button>
                         <div id="batchDownloadList" class="batch-download-list"></div>
                     </div>
-
-                    <button id="newConversionBtn" class="new-conversion-btn">
-                        Convert Another File
-                    </button>
                 </div>
             </section>
         </main>
@@ -179,27 +200,32 @@
                         <div class="footer-column-modern">
                             <h4>Tools</h4>
                             <ul>
-                                <li><a href="#">MP4 to MP3</a></li>
-                                <li><a href="#">Audio Enhancer</a></li>
-                                <li><a href="#">Video Converter</a></li>
-                                <li><a href="#">Audio Trimmer</a></li>
+                                <li><a href="/tools" target="_blank">MP4 to MP3</a></li>
+                                <li><a href="/tools" target="_blank">Audio Enhancer</a></li>
+                                <li><a href="https://free2formate-production-0000.up.railway.app" target="_blank">Video
+                                        Converter</a></li>
+                                <li><a href="/tools" target="_blank">Audio Trimmer</a></li>
                             </ul>
                         </div>
                         <div class="footer-column-modern">
                             <h4>Company</h4>
                             <ul>
-                                <li><a href="#">About Us</a></li>
-                                <li><a href="#">Privacy Policy</a></li>
-                                <li><a href="#">Terms of Service</a></li>
-                                <li><a href="#">Contact</a></li>
+                                <li><a onclick="openPopup('aboutPopup')" style="cursor: pointer;">About Us</a></li>
+                                <li><a onclick="openPopup('privacyPopup')" style="cursor: pointer;">Privacy Policy</a>
+                                </li>
+                                <li><a onclick="openPopup('termsPopup')" style="cursor: pointer;">Terms of Service</a>
+                                </li>
+                                <li><a href="/contact">Contact</a></li>
                             </ul>
                         </div>
                         <div class="footer-column-modern">
                             <h4>Support</h4>
                             <ul>
-                                <li><a href="#">Help Center</a></li>
-                                <li><a href="#">FAQ</a></li>
-                                <li><a href="#">Report Issue</a></li>
+                                <li><a onclick="openPopup('helpCenterPopup')" style="cursor: pointer;">Help Center</a>
+                                </li>
+                                <li><a onclick="openPopup('faqPopup')" style="cursor: pointer;">FAQ</a></li>
+                                <li><a onclick="openPopup('reportIssuePopup')" style="cursor: pointer;">Report Issue</a>
+                                </li>
                             </ul>
                         </div>
                     </div>
@@ -210,10 +236,169 @@
                 </div>
             </div>
         </footer>
+
+        <!-- ABOUT US -->
+        <div class="popup" id="aboutPopup">
+            <div class="popup-content">
+                <span class="close" onclick="closePopup('aboutPopup')">&times;</span>
+                <h2>About Us</h2>
+                <p>Welcome to Sound Shift — your reliable MP4 to MP3 converter.</p>
+                <ul>
+                    <li>Our tool provides quick and easy audio extraction from video files.</li>
+                    <li>We prioritize speed, security, and user-friendliness.</li>
+                    <li>No installation needed — fully web-based and always free.</li>
+                    <li>Perfect for converting music, lectures, podcasts, and more.</li>
+                </ul>
+                <p>Sound Shift is designed for simplicity and efficiency, helping users convert files on the go.</p>
+            </div>
+        </div>
+
+        <!-- PRIVACY POLICY -->
+        <div class="popup" id="privacyPopup">
+            <div class="popup-content">
+                <span class="close" onclick="closePopup('privacyPopup')">&times;</span>
+                <h2>Privacy Policy</h2>
+                <p>Your privacy is important to us. Here's how we handle your data:</p>
+                <ul>
+                    <li>We do not collect, store, or share your uploaded files.</li>
+                    <li>All conversions are processed securely and removed after completion.</li>
+                    <li>No personal data is required to use our tool.</li>
+                    <li>Only anonymous analytics may be collected to improve site performance.</li>
+                </ul>
+                <p>By using Sound Shift, you agree to our privacy terms. This policy may be updated periodically.</p>
+            </div>
+        </div>
+
+        <!-- TERMS OF SERVICE -->
+        <div class="popup" id="termsPopup">
+            <div class="popup-content">
+                <span class="close" onclick="closePopup('termsPopup')">&times;</span>
+                <h2>Terms of Service</h2>
+                <p>By using Sound Shift, you agree to the following terms:</p>
+                <ul>
+                    <li>You must only convert files that you own or have the legal right to use.</li>
+                    <li>Do not use this tool for copyrighted content without permission.</li>
+                    <li>We reserve the right to block access to users who abuse the service.</li>
+                    <li>This tool is provided "as is" with no guarantees of uptime or specific features.</li>
+                </ul>
+                <p>Your use of Sound Shift implies acceptance of these terms. We may update these terms periodically, so
+                    please review them regularly.</p>
+            </div>
+        </div>
+
+        <!-- HELP CENTER -->
+        <div class="popup" id="helpCenterPopup">
+            <div class="popup-content">
+                <span class="close" onclick="closePopup('helpCenterPopup')">&times;</span>
+                <h2>Help Center</h2>
+                <p>Welcome to the SoundShift Help Center. Find answers to common questions and learn how to use our
+                    tools effectively.</p>
+                <h3>Quick Start Guide</h3>
+                <ul>
+                    <li>Upload your MP4 file by dragging and dropping or clicking "Browse Files"</li>
+                    <li>Select your preferred conversion quality</li>
+                    <li>Click "Convert Now" and wait for the process to complete</li>
+                    <li>Download your converted MP3 file</li>
+                </ul>
+                <h3>Common Issues</h3>
+                <ul>
+                    <li>File size limit: Maximum 1GB per file</li>
+                    <li>Supported formats: MP4 videos only</li>
+                    <li>Conversion time depends on file size and internet speed</li>
+                </ul>
+                <p>Need more help? Contact our support team through the Contact page.</p>
+            </div>
+        </div>
+
+        <!-- FAQ -->
+        <div class="popup" id="faqPopup">
+            <div class="popup-content">
+                <span class="close" onclick="closePopup('faqPopup')">&times;</span>
+                <h2>Frequently Asked Questions</h2>
+                <div class="faq-item">
+                    <h3>Is this service free?</h3>
+                    <p>Yes, SoundShift is completely free to use with no hidden charges.</p>
+                </div>
+                <div class="faq-item">
+                    <h3>What's the maximum file size?</h3>
+                    <p>You can upload files up to 1GB in size.</p>
+                </div>
+                <div class="faq-item">
+                    <h3>How long does conversion take?</h3>
+                    <p>Conversion time varies based on file size and internet speed, typically ranging from a few
+                        seconds to a few minutes.</p>
+                </div>
+                <div class="faq-item">
+                    <h3>Are my files secure?</h3>
+                    <p>Yes, we process files securely and delete them immediately after conversion. We never store your
+                        files.</p>
+                </div>
+                <div class="faq-item">
+                    <h3>Can I convert multiple files at once?</h3>
+                    <p>Yes, use our batch conversion mode to convert multiple files simultaneously.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- REPORT ISSUE -->
+        <div class="popup" id="reportIssuePopup">
+            <div class="popup-content">
+                <span class="close" onclick="closePopup('reportIssuePopup')">&times;</span>
+                <h2>Report an Issue</h2>
+                <p>Having problems with our service? Let us know and we'll help you resolve it quickly.</p>
+                <div class="report-section">
+                    <h3>Common Issues</h3>
+                    <ul>
+                        <li>Conversion fails or takes too long</li>
+                        <li>Download issues</li>
+                        <li>Audio quality problems</li>
+                        <li>Website functionality issues</li>
+                    </ul>
+                </div>
+                <p>For immediate assistance, please include:</p>
+                <ul>
+                    <li>A clear description of the issue</li>
+                    <li>Steps to reproduce the problem</li>
+                    <li>Your browser and operating system</li>
+                    <li>Any error messages you received</li>
+                </ul>
+                <p>Use our <a href="/contact">Contact form</a> to submit your report, and we'll get back to you as
+                    soon as possible.</p>
+            </div>
+        </div>
+
     </div>
 
     <script src="/static/updated_script.js"></script>
-    
+    <script>
+        function openPopup(id) {
+            document.getElementById(id).style.display = "block";
+        }
+
+        function closePopup(id) {
+            document.getElementById(id).style.display = "none";
+        }
+
+        window.onclick = function (event) {
+            const popups = document.querySelectorAll('.popup');
+            popups.forEach(popup => {
+                if (event.target === popup) {
+                    popup.style.display = "none";
+                }
+            });
+        };
+    </script>
+
+    <!-- Custom Error Modal -->
+    <div id="customErrorModal" style="display: none;">
+        <div class="custom-modal-overlay"></div>
+        <div class="custom-modal-content">
+            <div class="custom-modal-icon"><i class="fas fa-exclamation-circle"></i></div>
+            <div class="custom-modal-title">Error</div>
+            <div class="custom-modal-message"></div>
+            <button class="custom-modal-close">Close</button>
+        </div>
+    </div>
 </body>
 
 </html>

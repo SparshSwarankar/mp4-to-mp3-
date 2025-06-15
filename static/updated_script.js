@@ -13,7 +13,6 @@ document.addEventListener('DOMContentLoaded', function () {
     const downloadBtn = document.getElementById('downloadBtn');
     const downloadAllBtn = document.getElementById('downloadAllBtn');
     const batchDownloadList = document.getElementById('batchDownloadList');
-    const newConversionBtn = document.getElementById('newConversionBtn');
     const optionTabs = document.querySelectorAll('.option-tab');
     const normalOptions = document.getElementById('normalOptions');
     const themeToggle = document.getElementById('themeToggle');
@@ -157,10 +156,7 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     if (fileInput) {
-        fileInput.addEventListener('click', (e) => {
-            e.stopPropagation();
-        });
-
+        fileInput.addEventListener('click', (e) => e.stopPropagation());
         fileInput.addEventListener('change', e => {
             const files = e.target.files;
             isBatchMode ? processMultipleFiles(files) : processFile(files[0]);
@@ -171,7 +167,6 @@ document.addEventListener('DOMContentLoaded', function () {
     if (downloadBtn) downloadBtn.addEventListener('click', downloadFile);
     if (downloadAllBtn) downloadAllBtn.addEventListener('click', downloadAllFiles);
     if (audioPreview) audioPreview.addEventListener('play', setupAudioVisualization);
-    if (newConversionBtn) newConversionBtn.addEventListener('click', resetConverter);
 
     if (themeToggle) {
         themeToggle.addEventListener('change', function () {
@@ -266,19 +261,43 @@ document.addEventListener('DOMContentLoaded', function () {
     function resetConverter() {
         selectedFiles = [];
         convertedFiles = [];
-        fileInput.value = '';
-        fileList.innerHTML = '';
+        
+        if (fileInput) fileInput.value = '';
+        if (fileList) fileList.innerHTML = '';
+        if (fileInfo) {
         fileInfo.textContent = 'Maximum file size: 500MB';
         fileInfo.style.color = 'var(--text-secondary)';
-        progressContainer.style.display = 'none';
-        progressBar.style.width = '0%';
-        progressText.textContent = '0%';
-        resultSection.style.display = 'none';
+        }
+        if (progressContainer) progressContainer.style.display = 'none';
+        if (progressBar) progressBar.style.width = '0%';
+        if (resultSection) resultSection.style.display = 'none';
+        if (convertBtn) {
         convertBtn.disabled = true;
-        convertBtn.textContent = 'Convert';
+            convertBtn.textContent = 'Convert Now';
+        }
+        if (audioPreview) {
         audioPreview.pause();
         audioPreview.src = '';
-        batchDownloadList.innerHTML = '';
+        }
+        if (batchDownloadList) batchDownloadList.innerHTML = '';
+        
+        // Reset progress indicators
+        const elements = {
+            'progressStatus': 'Preparing...',
+            'progressPercentage': '0%',
+            'currentFile': '-',
+            'uploadSpeed': '0 KB/s',
+            'uploadedSize': '0 KB',
+            'timeRemaining': 'Calculating...'
+        };
+
+        for (const [id, value] of Object.entries(elements)) {
+            const element = document.getElementById(id);
+            if (element) element.textContent = value;
+        }
+
+        // Show upload area
+        if (dropZone) dropZone.style.display = 'block';
     }
 
     function updateUploadArea() {
@@ -296,27 +315,22 @@ document.addEventListener('DOMContentLoaded', function () {
     function processFile(file) {
         if (!validateFile(file)) return;
         selectedFiles = [file];
+        if (fileInfo) {
         fileInfo.textContent = `Selected: ${file.name} (${formatFileSize(file.size)})`;
         fileInfo.style.color = 'var(--text-secondary)';
-        convertBtn.disabled = false;
+        }
+        if (convertBtn) convertBtn.disabled = false;
     }
 
     function processMultipleFiles(files) {
-        // Convert FileList to Array and merge with existing selectedFiles, avoiding duplicates
         const newFiles = Array.from(files);
-        // Only add files that are not already in selectedFiles (by name and size)
         newFiles.forEach(file => {
-            if (
-                !selectedFiles.some(
-                    f => f.name === file.name && f.size === file.size && f.lastModified === file.lastModified
-                )
-            ) {
+            if (!selectedFiles.some(f => f.name === file.name && f.size === file.size)) {
                 selectedFiles.push(file);
             }
         });
 
         let skipped = 0;
-        // Remove invalid files from selectedFiles
         selectedFiles = selectedFiles.filter(file => {
             const valid = validateFile(file, false);
             if (!valid) skipped++;
@@ -324,11 +338,13 @@ document.addEventListener('DOMContentLoaded', function () {
         });
 
         updateFileList();
-        convertBtn.disabled = selectedFiles.length === 0;
+        if (convertBtn) convertBtn.disabled = selectedFiles.length === 0;
+        if (fileInfo) {
         fileInfo.textContent = skipped
             ? `Some files skipped. ${selectedFiles.length} valid file(s) selected.`
             : `${selectedFiles.length} file(s) selected.`;
         fileInfo.style.color = skipped ? 'red' : 'var(--text-secondary)';
+        }
     }
 
     function updateFileList() {
@@ -364,187 +380,210 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     async function handleConversion() {
-        if (!selectedFiles.length) return;
-
-        function setStatus(msg, color = null) {
-            if (conversionStatus) {
-                conversionStatus.textContent = msg;
-                conversionStatus.style.color = color || "var(--primary-color)";
-            }
-        }
-
-        convertBtn.disabled = true;
-        convertBtn.textContent = 'Converting...';
-        if (progressContainer) progressContainer.style.display = 'block';
-        if (progressBar) progressBar.style.width = '0%';
-        if (progressText) progressText.textContent = '0%';
-        convertedFiles = [];
-
-        // === Backend URL selection logic ===
-        const RENDER_BACKEND_URL = 'https://YOUR-RENDER-BACKEND-URL.onrender.com/convert';
-        const LOCAL_BACKEND_URL = 'http://127.0.0.1:5000/convert';
-
-        function getBackendUrl() {
-            if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-                return LOCAL_BACKEND_URL;
-            }
-            return RENDER_BACKEND_URL;
-        }
-
-        // --- Batch mode: send all files in one request ---
-        if (isBatchMode && selectedFiles.length > 1) {
-            setStatus(`Uploading and converting ${selectedFiles.length} files...`);
-            if (progressBar) progressBar.style.width = '10%';
-            if (progressText) progressText.textContent = '10%';
-
-            const formData = new FormData();
-            selectedFiles.forEach(file => formData.append('file', file));
-            const backendUrl = getBackendUrl();
-
-            let response;
-            try {
-                response = await fetch(backendUrl, {
-                    method: 'POST',
-                    body: formData
-                });
-            } catch (err) {
-                showCustomErrorModal('network', 'Could not connect to backend. Is it running?');
-                setStatus('Network error.', 'red');
-                convertBtn.disabled = false;
-                convertBtn.textContent = 'Convert Now';
-                if (progressBar) progressBar.style.width = '0%';
-                if (progressText) progressText.textContent = '0%';
-                return;
-            }
-
-            if (progressBar) progressBar.style.width = '80%';
-            if (progressText) progressText.textContent = '80%';
-
-            if (!response.ok) {
-                let msg = 'Conversion failed on server.';
-                try {
-                    const errJson = await response.json();
-                    if (errJson && errJson.error) msg = errJson.error;
-                } catch {}
-                showCustomErrorModal('conversion', msg);
-                setStatus('Conversion failed.', 'red');
-                convertBtn.disabled = false;
-                convertBtn.textContent = 'Convert Now';
-                if (progressBar) progressBar.style.width = '0%';
-                if (progressText) progressText.textContent = '0%';
-                return;
-            }
-
-            // Expect a ZIP file
-            let filename = 'converted_mp3s.zip';
-            const disposition = response.headers.get('Content-Disposition');
-            if (disposition && disposition.indexOf('filename=') !== -1) {
-                const match = disposition.match(/filename="?([^"]+)"?/);
-                if (match && match[1]) filename = match[1];
-            }
-            const blob = await response.blob();
-
-            // Check for empty ZIP
-            if (!blob || blob.size === 0) {
-                showCustomErrorModal('conversion', 'No files were converted. Please check your input files.');
-                setStatus('No files converted.', 'red');
-                convertBtn.disabled = false;
-                convertBtn.textContent = 'Convert Now';
-                if (progressBar) progressBar.style.width = '0%';
-                if (progressText) progressText.textContent = '0%';
-                return;
-            }
-
-            const url = URL.createObjectURL(blob);
-            convertedFiles = [{ url, filename }];
-
-            if (progressBar) progressBar.style.width = '100%';
-            if (progressText) progressText.textContent = '100%';
-
-            setStatus('Batch conversion complete!', "var(--success-color)");
-            showResult();
+        if (!selectedFiles.length) {
+            showCustomErrorModal('file', 'Please select at least one file to convert.');
             return;
         }
 
-        // --- Single file mode (or batch of 1) ---
-        let fileIdx = 0;
-        const totalFiles = selectedFiles.length;
-        for (const file of selectedFiles) {
-            setStatus(`Uploading and converting file ${fileIdx + 1} of ${totalFiles}...`);
-            if (progressBar) progressBar.style.width = `${Math.round((fileIdx / totalFiles) * 100)}%`;
-            if (progressText) progressText.textContent = `${Math.round((fileIdx / totalFiles) * 100)}%`;
+        // Progress tracking elements
+        const progressStatus = document.getElementById('progressStatus');
+        const progressPercentage = document.getElementById('progressPercentage');
+        const currentFile = document.getElementById('currentFile');
+        const uploadSpeed = document.getElementById('uploadSpeed');
+        const uploadedSize = document.getElementById('uploadedSize');
+        const timeRemaining = document.getElementById('timeRemaining');
+        const progressBar = document.getElementById('progressBar');
 
-            try {
+        // Reset progress display
+        progressContainer.style.display = 'block';
+        progressBar.style.width = '0%';
+        progressStatus.textContent = 'Preparing...';
+        progressPercentage.textContent = '0%';
+        currentFile.textContent = '-';
+        uploadSpeed.textContent = '0 KB/s';
+        uploadedSize.textContent = '0 KB';
+        timeRemaining.textContent = 'Calculating...';
+
+        convertBtn.disabled = true;
+        convertBtn.textContent = 'Converting...';
+        convertedFiles = [];
+
+        const RENDER_BACKEND_URL = 'https://YOUR-RENDER-BACKEND-URL.onrender.com/convert';
+        const LOCAL_BACKEND_URL = 'http://127.0.0.1:5000/convert';
+        const backendUrl = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+            ? LOCAL_BACKEND_URL : RENDER_BACKEND_URL;
+
+        // Function to handle file upload with progress
+        function uploadFileWithProgress(file, url) {
+            return new Promise((resolve, reject) => {
+                const xhr = new XMLHttpRequest();
                 const formData = new FormData();
                 formData.append('file', file);
-                const backendUrl = getBackendUrl();
 
-                let response;
-                try {
-                    response = await fetch(backendUrl, {
-                        method: 'POST',
-                        body: formData
-                    });
-                } catch (err) {
-                    showCustomErrorModal('network', 'Could not connect to backend. Is it running?');
-                    setStatus('Network error.', 'red');
-                    convertBtn.disabled = false;
-                    convertBtn.textContent = 'Convert Now';
-                    if (progressBar) progressBar.style.width = '0%';
-                    if (progressText) progressText.textContent = '0%';
-                    return;
-                }
+                // Progress tracking variables
+                let startTime = Date.now();
+                let lastLoaded = 0;
+                let lastTime = startTime;
 
-                if (!response.ok) {
-                    let msg = 'Conversion failed on server.';
-                    try {
-                        const errJson = await response.json();
-                        if (errJson && errJson.error) msg = errJson.error;
-                    } catch {}
-                    showCustomErrorModal('conversion', msg);
-                    setStatus('Conversion failed.', 'red');
-                    convertBtn.disabled = false;
-                    convertBtn.textContent = 'Convert Now';
-                    if (progressBar) progressBar.style.width = '0%';
-                    if (progressText) progressText.textContent = '0%';
-                    return;
-                }
+                xhr.upload.addEventListener('progress', (event) => {
+                    if (event.lengthComputable) {
+                        const currentTime = Date.now();
+                        const timeDiff = (currentTime - lastTime) / 1000; // seconds
+                        const loadedDiff = event.loaded - lastLoaded;
+                        const currentSpeed = (loadedDiff / 1024) / timeDiff; // KB/s
 
-                let filename = 'converted.mp3';
-                const disposition = response.headers.get('Content-Disposition');
-                if (disposition && disposition.indexOf('filename=') !== -1) {
-                    const match = disposition.match(/filename="?([^"]+)"?/);
-                    if (match && match[1]) filename = match[1];
-                }
+                        // Calculate progress percentage
+                        const progress = (event.loaded / event.total) * 100;
+                        progressBar.style.width = `${progress}%`;
+                        progressPercentage.textContent = `${Math.round(progress)}%`;
+                        
+                        // Update current file info
+                        currentFile.textContent = file.name;
+                        
+                        // Update speed
+                        uploadSpeed.textContent = `${Math.round(currentSpeed)} KB/s`;
+                        
+                        // Update uploaded size
+                        uploadedSize.textContent = `${Math.round(event.loaded / 1024)} KB`;
+                        
+                        // Calculate time remaining
+                        if (currentSpeed > 0) {
+                            const remainingBytes = event.total - event.loaded;
+                            const remainingSeconds = (remainingBytes / 1024) / currentSpeed;
+                            timeRemaining.textContent = remainingSeconds > 60 
+                                ? `${Math.round(remainingSeconds / 60)}m ${Math.round(remainingSeconds % 60)}s`
+                                : `${Math.round(remainingSeconds)}s`;
+                        }
+
+                        // Update for next calculation
+                        lastLoaded = event.loaded;
+                        lastTime = currentTime;
+                        
+                        progressStatus.textContent = `Uploading ${file.name}...`;
+                    }
+                });
+
+                xhr.addEventListener('load', () => {
+                    if (xhr.status === 200) {
+                        try {
+                            const response = new Response(xhr.response);
+                            resolve(response);
+                        } catch (error) {
+                            reject(new Error('Invalid response format'));
+                        }
+                    } else {
+                        reject(new Error(`HTTP Error: ${xhr.status}`));
+                    }
+                });
+
+                xhr.addEventListener('error', () => {
+                    reject(new Error('Network error occurred'));
+                });
+
+                xhr.addEventListener('abort', () => {
+                    reject(new Error('Upload aborted'));
+                });
+
+                xhr.open('POST', url);
+                xhr.responseType = 'blob';
+                xhr.send(formData);
+            });
+        }
+
+        // Batch mode handling
+        if (isBatchMode && selectedFiles.length > 1) {
+            const formData = new FormData();
+            let totalSize = 0;
+            selectedFiles.forEach(file => {
+                formData.append('file', file);
+                totalSize += file.size;
+            });
+
+            try {
+                progressStatus.textContent = 'Preparing batch upload...';
+                const response = await uploadFileWithProgress(selectedFiles[0], backendUrl);
+                
+                if (!response.ok) throw new Error('Conversion failed');
+
+            const blob = await response.blob();
+                if (!blob || blob.size === 0) throw new Error('Empty response');
+
+                const filename = response.headers.get('Content-Disposition')?.match(/filename="?([^"]+)"?/)?.[1] || 'converted_mp3s.zip';
+            const url = URL.createObjectURL(blob);
+            convertedFiles = [{ url, filename }];
+
+                progressStatus.textContent = 'Batch conversion complete!';
+                progressBar.style.width = '100%';
+                progressPercentage.textContent = '100%';
+            showResult();
+
+            } catch (error) {
+                showCustomErrorModal('conversion', error.message || 'Conversion failed. Please try again.');
+                resetProgress();
+            }
+            return;
+        }
+
+        // Single file mode
+        for (const file of selectedFiles) {
+            try {
+                progressStatus.textContent = `Processing ${file.name}...`;
+                const response = await uploadFileWithProgress(file, backendUrl);
+
+                if (!response.ok) throw new Error('Conversion failed');
+
+                progressStatus.textContent = `Converting ${file.name}...`;
                 const blob = await response.blob();
-                if (!blob || blob.size === 0) {
-                    showCustomErrorModal('conversion', 'No file was converted. Please check your input file.');
-                    setStatus('No file converted.', 'red');
-                    convertBtn.disabled = false;
-                    convertBtn.textContent = 'Convert Now';
-                    if (progressBar) progressBar.style.width = '0%';
-                    if (progressText) progressText.textContent = '0%';
-                    return;
-                }
+                if (!blob || blob.size === 0) throw new Error('Empty response');
+
+                const filename = response.headers.get('Content-Disposition')?.match(/filename="?([^"]+)"?/)?.[1] || 'converted.mp3';
                 const url = URL.createObjectURL(blob);
                 convertedFiles.push({ url, filename });
 
-                fileIdx++;
-                if (progressBar) progressBar.style.width = `${Math.round((fileIdx / totalFiles) * 100)}%`;
-                if (progressText) progressText.textContent = `${Math.round((fileIdx / totalFiles) * 100)}%`;
+                progressStatus.textContent = `${file.name} converted successfully!`;
+                progressBar.style.width = '100%';
+                progressPercentage.textContent = '100%';
 
-                setStatus(`File ${fileIdx} converted!`, "var(--success-color)");
             } catch (error) {
-                setStatus("An error occurred during conversion.", "red");
-                showCustomErrorModal('conversion', 'An error occurred during conversion.');
-                convertBtn.disabled = false;
-                convertBtn.textContent = 'Convert Now';
-                if (progressBar) progressBar.style.width = '0%';
-                if (progressText) progressText.textContent = '0%';
+                showCustomErrorModal('conversion', error.message || 'Conversion failed. Please try again.');
+                resetProgress();
                 return;
             }
         }
+
+        progressStatus.textContent = 'All conversions complete!';
         showResult();
+    }
+
+    function resetProgress() {
+        convertBtn.disabled = false;
+        convertBtn.textContent = 'Convert Now';
+        progressBar.style.width = '0%';
+        progressContainer.style.display = 'none';
+        document.getElementById('progressStatus').textContent = 'Preparing...';
+        document.getElementById('progressPercentage').textContent = '0%';
+        document.getElementById('currentFile').textContent = '-';
+        document.getElementById('uploadSpeed').textContent = '0 KB/s';
+        document.getElementById('uploadedSize').textContent = '0 KB';
+        document.getElementById('timeRemaining').textContent = 'Calculating...';
+    }
+
+    async function deleteConvertedFile(filename) {
+        try {
+            const response = await fetch(`${backendUrl}/delete`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ filename: filename })
+            });
+
+            if (!response.ok) {
+                console.warn('File deletion failed:', filename);
+            }
+        } catch (error) {
+            console.warn('Error during file deletion:', error);
+        }
     }
 
     function showResult() {
@@ -553,27 +592,23 @@ document.addEventListener('DOMContentLoaded', function () {
             resultMessage.style.color = 'green';
         }
         if (resultSection) resultSection.style.display = 'block';
-        if (batchDownloadList) batchDownloadList.innerHTML = '';
 
         // --- Batch mode ZIP download ---
         if (convertedFiles.length === 1 && isBatchMode && selectedFiles.length > 1) {
             audioPreview.src = '';
             audioPreview.style.display = 'none';
 
-            // Show batch result section, hide single file result
             const batchFileResult = document.getElementById('batchFileResult');
             const singleFileResult = document.getElementById('singleFileResult');
             if (batchFileResult) batchFileResult.style.display = 'block';
             if (singleFileResult) singleFileResult.style.display = 'none';
 
-            // Show Download All button for batch ZIP
             if (downloadAllBtn) {
                 downloadAllBtn.style.display = 'inline-block';
                 downloadAllBtn.disabled = false;
-                // Remove any previous event listeners by replacing the node
                 const newDownloadAllBtn = downloadAllBtn.cloneNode(true);
                 downloadAllBtn.parentNode.replaceChild(newDownloadAllBtn, downloadAllBtn);
-                newDownloadAllBtn.onclick = function () {
+                newDownloadAllBtn.onclick = async function () {
                     const fileObj = convertedFiles[0];
                     const a = document.createElement('a');
                     a.href = fileObj.url;
@@ -581,18 +616,20 @@ document.addEventListener('DOMContentLoaded', function () {
                     document.body.appendChild(a);
                     a.click();
                     document.body.removeChild(a);
+                    
+                    // Delete the ZIP file after download
+                    await deleteConvertedFile(fileObj.filename);
+                    
+                    // Clean up the URL object
+                    URL.revokeObjectURL(fileObj.url);
+                    
+                    // Reset the converter after a short delay
                     setTimeout(resetConverter, 500);
                 };
             }
 
-            // Remove ZIP download link in the batch list (no extra ZIP link)
-            if (batchDownloadList) {
-                batchDownloadList.innerHTML = '';
-            }
-            // Hide single download button
+            if (batchDownloadList) batchDownloadList.innerHTML = '';
             if (downloadBtn) downloadBtn.style.display = 'none';
-
-            // Prevent further code from running (which triggers extra downloads)
             return;
         }
 
@@ -605,7 +642,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
             if (downloadAllBtn) downloadAllBtn.style.display = 'none';
             if (downloadBtn) downloadBtn.style.display = 'inline-block';
-            // Show single file result, hide batch result
+
             const batchFileResult = document.getElementById('batchFileResult');
             const singleFileResult = document.getElementById('singleFileResult');
             if (batchFileResult) batchFileResult.style.display = 'none';
@@ -613,7 +650,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
             downloadBtn.replaceWith(downloadBtn.cloneNode(true));
             const newDownloadBtn = document.getElementById('downloadBtn');
-            newDownloadBtn.onclick = function (e) {
+            newDownloadBtn.onclick = async function (e) {
                 e.preventDefault();
                 const a = document.createElement('a');
                 a.href = fileObj.url;
@@ -621,29 +658,68 @@ document.addEventListener('DOMContentLoaded', function () {
                 document.body.appendChild(a);
                 a.click();
                 document.body.removeChild(a);
+                
+                // Delete the file after download
+                await deleteConvertedFile(fileObj.filename);
+                
+                // Clean up the URL object
+                URL.revokeObjectURL(fileObj.url);
+                
+                // Reset the converter after a short delay
                 setTimeout(resetConverter, 500);
             };
         } else {
             audioPreview.src = '';
             audioPreview.style.display = 'none';
-            downloadAllBtn.onclick = function () {
-                convertedFiles.forEach((fileObj, idx) => {
+            downloadAllBtn.onclick = async function () {
+                for (const fileObj of convertedFiles) {
                     const a = document.createElement('a');
                     a.href = fileObj.url;
-                    a.download = fileObj.filename || `converted_${idx + 1}.mp3`;
+                    a.download = fileObj.filename;
                     document.body.appendChild(a);
                     a.click();
                     document.body.removeChild(a);
-                });
+                    
+                    // Delete each file after download
+                    await deleteConvertedFile(fileObj.filename);
+                    
+                    // Clean up the URL object
+                    URL.revokeObjectURL(fileObj.url);
+                }
+                // Reset the converter after all files are downloaded
                 setTimeout(resetConverter, 500);
             };
+            
+            // Update batch download list with individual file downloads
+            batchDownloadList.innerHTML = '';
             convertedFiles.forEach((fileObj, idx) => {
                 const listItem = document.createElement('div');
                 listItem.className = 'batch-item';
                 listItem.innerHTML = `
                     <span>File ${idx + 1}</span>
-                    <a href="${fileObj.url}" download="${fileObj.filename}" target="_blank">Download</a>
+                    <button class="batch-download-btn">Download</button>
                 `;
+                
+                const downloadBtn = listItem.querySelector('.batch-download-btn');
+                downloadBtn.onclick = async function() {
+                    const a = document.createElement('a');
+                    a.href = fileObj.url;
+                    a.download = fileObj.filename;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    
+                    // Delete the individual file after download
+                    await deleteConvertedFile(fileObj.filename);
+                    
+                    // Clean up the URL object
+                    URL.revokeObjectURL(fileObj.url);
+                    
+                    // Disable the button after download
+                    this.disabled = true;
+                    this.textContent = 'Downloaded';
+                };
+                
                 batchDownloadList.appendChild(listItem);
             });
         }
@@ -721,14 +797,8 @@ document.addEventListener('DOMContentLoaded', function () {
     if (contactForm) {
         contactForm.addEventListener('submit', function(e) {
             e.preventDefault();
-            var status = document.getElementById('contactStatus');
-            status.textContent = "Sending...";
-            status.style.color = "var(--primary-color)";
-            setTimeout(function() {
-                status.textContent = "Thank you for contacting us! We'll get back to you soon.";
-                status.style.color = "var(--success-color)";
+            showCustomErrorModal('success', "Thank you for contacting us! We'll get back to you soon.");
                 contactForm.reset();
-            }, 1200);
         });
     }
 

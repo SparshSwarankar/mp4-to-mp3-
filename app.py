@@ -6,15 +6,44 @@ import tempfile
 import subprocess
 from io import BytesIO
 import zipfile
+import logging
+import datetime
+import shutil
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(levelname)s - %(message)s',
+    datefmt='%Y-%m-%d %H:%M:%S'
+)
+logger = logging.getLogger(__name__)
+
+# Create a file handler
+file_handler = logging.FileHandler('file_operations.log')
+file_handler.setLevel(logging.INFO)
+formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+file_handler.setFormatter(formatter)
+logger.addHandler(file_handler)
 
 app = Flask(__name__, template_folder='templates', static_folder='static')
-CORS(app, resources={r"/*": {"origins": "*"}}, supports_credentials=True)  # Ensure CORS for all routes and errors
+CORS(app, resources={r"/*": {"origins": "*"}}, supports_credentials=True)
 
+# Configuration
 app.config['MAX_CONTENT_LENGTH'] = 1024 * 1024 * 1024  # 1GB max upload
+app.config['UPLOAD_FOLDER'] = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'uploads')
+app.config['CONVERTED_FOLDER'] = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'converted')
+
+# Create upload and converted folders if they don't exist
+os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
+os.makedirs(app.config['CONVERTED_FOLDER'], exist_ok=True)
 
 @app.route('/')
 def home():
     return render_template('index.html')
+
+@app.route('/about')
+def about():
+    return render_template('about.html')
 
 @app.route('/tools')
 def tools():
@@ -24,11 +53,11 @@ def tools():
 def contact():
     return render_template('contact.html')
 
-@app.route('/static/<path:path>')
-def static_files(path):
-    return send_from_directory('static', path)
+@app.route('/static/<path:filename>')
+def static_files(filename):
+    return send_from_directory('static', filename)
 
-@app.errorhandler(Exception)
+@app.errorhandler(Exception)    
 def handle_error(e):
     # Always return CORS headers on errors
     response = jsonify({'error': str(e)})
@@ -63,32 +92,85 @@ def convert():
             resp.headers['Access-Control-Allow-Origin'] = '*'
             return resp, 400
 
-    with tempfile.TemporaryDirectory() as tmpdir:
-        mp3_paths = []
+    mp3_paths = []
+    uploaded_files = []
+
+    try:
+        # Save uploaded files
         for file in files:
             filename = secure_filename(file.filename)
-            mp4_path = os.path.join(tmpdir, filename)
-            mp3_path = os.path.join(tmpdir, filename.rsplit('.', 1)[0] + '.mp3')
+            mp4_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
             file.save(mp4_path)
+            uploaded_files.append(mp4_path)
+            
+            print("\n" + "="*50)
+            print("File Upload Details:")
+            print("="*50)
+            print(f"File Name: {filename}")
+            print(f"Upload Path: {mp4_path}")
+            print(f"Size: {os.path.getsize(mp4_path)/1024:.2f} KB")
+            print(f"Upload Time: {datetime.datetime.now()}")
+            print("="*50 + "\n")
+            
+            # Convert the file
+            mp3_filename = filename.rsplit('.', 1)[0] + '.mp3'
+            mp3_path = os.path.join(app.config['CONVERTED_FOLDER'], mp3_filename)
+            
             try:
                 result = subprocess.run(
                     [
-                        'ffmpeg', '-y', '-loglevel', 'error', '-i', mp4_path, '-vn', '-acodec', 'libmp3lame', '-ab', '192k', mp3_path
+                        'ffmpeg', '-y', '-loglevel', 'error', 
+                        '-i', mp4_path, 
+                        '-vn', '-acodec', 'libmp3lame', 
+                        '-ab', '192k', 
+                        mp3_path
                     ],
                     stdout=subprocess.PIPE,
                     stderr=subprocess.PIPE
                 )
-                print(f"Converting: {mp4_path} -> {mp3_path}, returncode={result.returncode}")
-                if result.returncode != 0 or not os.path.exists(mp3_path):
-                    print(f"Failed: {filename}, stderr={result.stderr.decode()}")
-                else:
+                
+                print("\n" + "="*50)
+                print("File Processing Details:")
+                print("="*50)
+                print(f"Input File: {filename}")
+                print(f"Status: {'Success' if result.returncode == 0 else 'Failed'}")
+                print(f"Input Path: {mp4_path}")
+                print(f"Output Path: {mp3_path}")
+                print(f"Return Code: {result.returncode}")
+                if result.stderr:
+                    print(f"Error Output: {result.stderr.decode()}")
+                print("="*50 + "\n")
+
+                if result.returncode == 0 and os.path.exists(mp3_path):
                     mp3_paths.append(mp3_path)
+                    logger.info(f"Successfully converted: {filename}")
+                else:
+                    logger.error(f"Conversion failed for {filename}")
+                    print(f"Failed: {filename}, stderr={result.stderr.decode()}")
+            
             except Exception as e:
+                logger.error(f"Exception during conversion of {filename}: {e}")
                 print(f"Exception for {filename}: {e}")
 
-        print("MP3s created:", mp3_paths)
+        print("\n" + "="*50)
+        print("Conversion Summary:")
+        print("="*50)
+        print(f"Total files processed: {len(files)}")
+        print(f"Successfully converted: {len(mp3_paths)}")
+        print(f"Failed conversions: {len(files) - len(mp3_paths)}")
+        print("="*50 + "\n")
 
-        # If only one file, return as before
+        # If no MP3s were created, return error
+        if not mp3_paths:
+            # Clean up uploaded files
+            for path in uploaded_files:
+                if os.path.exists(path):
+                    os.remove(path)
+            resp = jsonify({'error': 'No files were converted. Please check your input files.'})
+            resp.headers['Access-Control-Allow-Origin'] = '*'
+            return resp, 500
+
+        # Handle single file response
         if len(mp3_paths) == 1:
             with open(mp3_paths[0], 'rb') as f:
                 mp3_data = f.read()
@@ -96,11 +178,42 @@ def convert():
             @after_this_request
             def cleanup(response):
                 try:
+                    # Clean up the uploaded MP4 file
+                    for path in uploaded_files:
+                        if os.path.exists(path):
+                            print("\n" + "="*50)
+                            print("MP4 File Deletion Details:")
+                            print("="*50)
+                            print(f"Deleting: {os.path.basename(path)}")
+                            print(f"Location: {path}")
+                            print(f"Size: {os.path.getsize(path)/1024:.2f} KB")
+                            print(f"Timestamp: {datetime.datetime.now()}")
+                            os.remove(path)
+                            print("Status: Successfully deleted MP4")
+                            print("="*50 + "\n")
+
+                    # Clean up the converted MP3 file
                     for path in mp3_paths:
                         if os.path.exists(path):
+                            print("\n" + "="*50)
+                            print("MP3 File Deletion Details:")
+                            print("="*50)
+                            print(f"Deleting: {os.path.basename(path)}")
+                            print(f"Location: {path}")
+                            print(f"Size: {os.path.getsize(path)/1024:.2f} KB")
+                            print(f"Timestamp: {datetime.datetime.now()}")
                             os.remove(path)
+                            print("Status: Successfully deleted MP3")
+                            print("="*50 + "\n")
+
                 except Exception as cleanup_err:
-                    print("Cleanup error:", cleanup_err)
+                    print("\n" + "="*50)
+                    print("File Deletion Error:")
+                    print("="*50)
+                    print(f"Error: {cleanup_err}")
+                    print(f"Timestamp: {datetime.datetime.now()}")
+                    print("="*50 + "\n")
+                    logger.error(f"Error during file cleanup: {cleanup_err}")
                 return response
 
             response = send_file(
@@ -115,40 +228,73 @@ def convert():
             response.headers['Access-Control-Allow-Methods'] = 'POST, OPTIONS'
             return response
 
-        # If multiple files, zip them
-        if len(mp3_paths) > 1:
-            zip_buffer = BytesIO()
-            with zipfile.ZipFile(zip_buffer, 'w') as zipf:
-                for mp3_path in mp3_paths:
-                    zipf.write(mp3_path, arcname=os.path.basename(mp3_path))
-            zip_buffer.seek(0)
+        # Handle multiple files (ZIP)
+        zip_buffer = BytesIO()
+        with zipfile.ZipFile(zip_buffer, 'w') as zipf:
+            for mp3_path in mp3_paths:
+                zipf.write(mp3_path, arcname=os.path.basename(mp3_path))
+        zip_buffer.seek(0)
 
-            @after_this_request
-            def cleanup(response):
-                try:
-                    for path in mp3_paths:
-                        if os.path.exists(path):
-                            os.remove(path)
-                except Exception as cleanup_err:
-                    print("Cleanup error:", cleanup_err)
-                return response
+        @after_this_request
+        def cleanup(response):
+            try:
+                # Clean up the uploaded MP4 files
+                for path in uploaded_files:
+                    if os.path.exists(path):
+                        print("\n" + "="*50)
+                        print("MP4 File Deletion Details:")
+                        print("="*50)
+                        print(f"Deleting: {os.path.basename(path)}")
+                        print(f"Location: {path}")
+                        print(f"Size: {os.path.getsize(path)/1024:.2f} KB")
+                        print(f"Timestamp: {datetime.datetime.now()}")
+                        os.remove(path)
+                        print("Status: Successfully deleted MP4")
+                        print("="*50 + "\n")
 
-            response = send_file(
-                zip_buffer,
-                as_attachment=True,
-                download_name=f'converted_{len(mp3_paths)}_mp3s.zip',
-                mimetype='application/zip'
-            )
-            response.headers['Access-Control-Allow-Origin'] = '*'
-            response.headers['Access-Control-Allow-Credentials'] = 'true'
-            response.headers['Access-Control-Allow-Headers'] = 'Content-Type'
-            response.headers['Access-Control-Allow-Methods'] = 'POST, OPTIONS'
-            response.headers['Content-Disposition'] = f'attachment; filename=converted_{len(mp3_paths)}_mp3s.zip'
-            response.headers['Content-Type'] = 'application/zip'
+                # Clean up the converted MP3 files
+                for path in mp3_paths:
+                    if os.path.exists(path):
+                        print("\n" + "="*50)
+                        print("MP3 File Deletion Details:")
+                        print("="*50)
+                        print(f"Deleting: {os.path.basename(path)}")
+                        print(f"Location: {path}")
+                        print(f"Size: {os.path.getsize(path)/1024:.2f} KB")
+                        print(f"Timestamp: {datetime.datetime.now()}")
+                        os.remove(path)
+                        print("Status: Successfully deleted MP3")
+                        print("="*50 + "\n")
+
+            except Exception as cleanup_err:
+                print("\n" + "="*50)
+                print("File Deletion Error:")
+                print("="*50)
+                print(f"Error: {cleanup_err}")
+                print(f"Timestamp: {datetime.datetime.now()}")
+                print("="*50 + "\n")
+                logger.error(f"Error during file cleanup: {cleanup_err}")
             return response
 
-        # If no MP3s were created, return error
-        resp = jsonify({'error': 'No files were converted. Please check your input files.'})
+        response = send_file(
+            zip_buffer,
+            as_attachment=True,
+            download_name=f'converted_{len(mp3_paths)}_mp3s.zip',
+            mimetype='application/zip'
+        )
+        response.headers['Access-Control-Allow-Origin'] = '*'
+        response.headers['Access-Control-Allow-Credentials'] = 'true'
+        response.headers['Access-Control-Allow-Headers'] = 'Content-Type'
+        response.headers['Access-Control-Allow-Methods'] = 'POST, OPTIONS'
+        return response
+
+    except Exception as e:
+        # Clean up in case of errors
+        for path in uploaded_files + mp3_paths:
+            if os.path.exists(path):
+                os.remove(path)
+        logger.error(f"Error during conversion process: {e}")
+        resp = jsonify({'error': str(e)})
         resp.headers['Access-Control-Allow-Origin'] = '*'
         return resp, 500
 

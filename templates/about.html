@@ -4,11 +4,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SoundShift - MP4 to MP3 Converter</title>
+    <title>SoundShift - About Us</title>
     <link rel="stylesheet" href="/static/styles.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="shortcut icon" href="/static/icons8-sound-3d-fluency-96.png" type="image/x-icon">
-    <script src="/static/updated_script.js"></script>
 </head>
 
 <body>
@@ -36,31 +35,75 @@
         <main>
             <section class="hero">
                 <div class="hero-content">
-                    <h1>Contact Us</h1>
-                    <p>Have questions, feedback, or need support? Reach out to the SoundShift team below.</p>
-
+                    <h1>About SoundShift</h1>
+                    <p>Your trusted companion for audio conversion needs</p>
                 </div>
             </section>
 
-            <section class="contact-section">
-                <div class="converter-card contact-card">
-                    <form id="contactForm" class="contact-form">
-                        <div class="option-row">
-                            <label for="name">Your Name</label>
-                            <input type="text" id="name" name="name" required placeholder="Enter your name" />
+            <section class="about-section">
+                <div class="about-container">
+                    <div class="about-card">
+                        <h2>Our Story</h2>
+                        <p>SoundShift was born from a simple idea: making audio conversion accessible to everyone. We
+                            believe that working with audio files should be simple, fast, and free.</p>
+
+                        <div class="mission-vision">
+                            <div class="mission">
+                                <h3><i class="fas fa-bullseye"></i> Our Mission</h3>
+                                <p>To provide the most user-friendly and efficient audio conversion tools, making
+                                    digital content more accessible to everyone.</p>
+                            </div>
+                            <div class="vision">
+                                <h3><i class="fas fa-eye"></i> Our Vision</h3>
+                                <p>To become the go-to platform for all audio conversion needs, while maintaining our
+                                    commitment to simplicity and user privacy.</p>
+                            </div>
                         </div>
-                        <div class="option-row">
-                            <label for="email">Your Email</label>
-                            <input type="email" id="email" name="email" required placeholder="Enter your email" />
+
+                        <div class="values-section">
+                            <h3>Our Core Values</h3>
+                            <div class="values-grid">
+                                <div class="value-card">
+                                    <i class="fas fa-shield-alt"></i>
+                                    <h4>Security</h4>
+                                    <p>Your files are processed securely and deleted immediately after conversion.</p>
+                                </div>
+                                <div class="value-card">
+                                    <i class="fas fa-bolt"></i>
+                                    <h4>Speed</h4>
+                                    <p>Lightning-fast conversions with optimized processing algorithms.</p>
+                                </div>
+                                <div class="value-card">
+                                    <i class="fas fa-user-friends"></i>
+                                    <h4>User-Friendly</h4>
+                                    <p>Simple, intuitive interface that anyone can use.</p>
+                                </div>
+                                <div class="value-card">
+                                    <i class="fas fa-hand-holding-heart"></i>
+                                    <h4>Free Access</h4>
+                                    <p>Quality tools available to everyone, without cost.</p>
+                                </div>
+                            </div>
                         </div>
-                        <div class="option-row">
-                            <label for="message">Message</label>
-                            <textarea id="message" name="message" rows="5" required
-                                placeholder="How can we help you?"></textarea>
+
+                        <div class="features-highlight">
+                            <h3>What Sets Us Apart</h3>
+                            <ul>
+                                <li><i class="fas fa-check-circle"></i> No software installation required</li>
+                                <li><i class="fas fa-check-circle"></i> Batch conversion support</li>
+                                <li><i class="fas fa-check-circle"></i> High-quality output options</li>
+                                <li><i class="fas fa-check-circle"></i> Cross-platform compatibility</li>
+                                <li><i class="fas fa-check-circle"></i> No registration needed</li>
+                            </ul>
                         </div>
-                        <button type="submit" class="convert-btn" style="margin-top: 18px;">Send Message</button>
-                        <div id="contactStatus" class="conversion-status"></div>
-                    </form>
+
+                        <div class="team-section">
+                            <h3>Meet Our Team</h3>
+                            <p>We're a passionate group of developers and designers committed to creating the best audio
+                                conversion experience possible. Our team combines expertise in audio processing, web
+                                development, and user experience design.</p>
+                        </div>
+                    </div>
                 </div>
             </section>
         </main>
@@ -118,6 +161,7 @@
                 </div>
             </div>
         </footer>
+
 
         <!-- ABOUT US -->
         <div class="popup" id="aboutPopup">
@@ -248,8 +292,20 @@
                     as possible.</p>
             </div>
         </div>
-
     </div>
+
+    <!-- Custom Error Modal -->
+    <div id="customErrorModal" style="display: none;">
+        <div class="custom-modal-overlay"></div>
+        <div class="custom-modal-content">
+            <div class="custom-modal-icon"><i class="fas fa-exclamation-circle"></i></div>
+            <div class="custom-modal-title">Error</div>
+            <div class="custom-modal-message"></div>
+            <button class="custom-modal-close">Close</button>
+        </div>
+    </div>
+
+    <script src="/static/updated_script.js"></script>
     <script>
         function openPopup(id) {
             document.getElementById(id).style.display = "block";
@@ -268,17 +324,6 @@
             });
         };
     </script>
-
-    <!-- Custom Error Modal -->
-    <div id="customErrorModal" style="display: none;">
-        <div class="custom-modal-overlay"></div>
-        <div class="custom-modal-content">
-            <div class="custom-modal-icon"><i class="fas fa-exclamation-circle"></i></div>
-            <div class="custom-modal-title">Error</div>
-            <div class="custom-modal-message"></div>
-            <button class="custom-modal-close">Close</button>
-        </div>
-    </div>
 </body>
 
 </html>
