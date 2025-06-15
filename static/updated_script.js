@@ -408,7 +408,7 @@ document.addEventListener('DOMContentLoaded', function () {
         convertBtn.textContent = 'Converting...';
         convertedFiles = [];
 
-        const RENDER_BACKEND_URL = 'https://sound-shift.onrender.com';
+        const RENDER_BACKEND_URL = 'https://sound-shift.onrender.com/convert';
         const LOCAL_BACKEND_URL = 'http://127.0.0.1:5000/convert';
         const backendUrl = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
             ? LOCAL_BACKEND_URL : RENDER_BACKEND_URL;
@@ -419,7 +419,6 @@ document.addEventListener('DOMContentLoaded', function () {
                 const xhr = new XMLHttpRequest();
                 const formData = new FormData();
                 formData.append('file', file);
-
                 // Progress tracking variables
                 let startTime = Date.now();
                 let lastLoaded = 0;
