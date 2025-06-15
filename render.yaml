@@ -1,7 +1,7 @@
 services:
   - type: web
     name: soundshift-app
-    env: python-3.11.9
+    env: python-3.11.7
     buildCommand: "pip install -r requirements.txt"
     startCommand: "gunicorn app:app"
     envVars:
