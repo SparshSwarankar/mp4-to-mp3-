@@ -408,7 +408,7 @@ document.addEventListener('DOMContentLoaded', function () {
         convertBtn.textContent = 'Converting...';
         convertedFiles = [];
 
-        const RENDER_BACKEND_URL = 'https://YOUR-RENDER-BACKEND-URL.onrender.com/convert';
+        const RENDER_BACKEND_URL = 'https://soundshift.onrender.com';
         const LOCAL_BACKEND_URL = 'http://127.0.0.1:5000/convert';
         const backendUrl = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
             ? LOCAL_BACKEND_URL : RENDER_BACKEND_URL;

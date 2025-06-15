@@ -84,7 +84,7 @@
                             <ul>
                                 <li><a href="/tools" target="_blank">MP4 to MP3</a></li>
                                 <li><a href="/tools" target="_blank">Audio Enhancer</a></li>
-                                <li><a href="https://free2formate-production-0000.up.railway.app" target="_blank">Video
+                                <li><a href="https://free2formate.up.railway.app" target="_blank">Video
                                         Converter</a></li>
                                 <li><a href="/tools" target="_blank">Audio Trimmer</a></li>
                             </ul>
@@ -267,6 +267,35 @@
                 }
             });
         };
+
+        document.getElementById('contactForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const formData = {
+                name: document.getElementById('name').value,
+                email: document.getElementById('email').value,
+                message: document.getElementById('message').value
+            };
+
+            const scriptURL = 'YOUR_GOOGLE_SCRIPT_URL';
+            
+            fetch(scriptURL, {
+                method: 'POST',
+                body: JSON.stringify(formData),
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('contactStatus').innerHTML = 'Message sent successfully!';
+                document.getElementById('contactForm').reset();
+            })
+            .catch(error => {
+                document.getElementById('contactStatus').innerHTML = 'Error sending message. Please try again.';
+                console.error('Error:', error);
+            });
+        });
     </script>
 
     <!-- Custom Error Modal -->
