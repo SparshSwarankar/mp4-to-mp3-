@@ -2,11 +2,13 @@ from flask import Flask, request, send_file, jsonify, after_this_request, make_r
 from werkzeug.utils import secure_filename
 from flask_cors import CORS
 import os
+import tempfile
 import subprocess
 from io import BytesIO
 import zipfile
 import logging
 import datetime
+import shutil
 
 # Configure logging
 logging.basicConfig(
