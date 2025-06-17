@@ -1,4 +1,3 @@
-// ...your JS code...
 document.addEventListener('DOMContentLoaded', function () {
     // === DOM Elements ===
     const dropZone = document.getElementById('dropZone');
@@ -25,6 +24,17 @@ document.addEventListener('DOMContentLoaded', function () {
     const audioVisualizer = document.getElementById('audioVisualizer');
     const conversionStatus = document.getElementById('conversionStatus');
 
+    // Audio Enhancer specific elements
+    const enhanceBtn = document.getElementById('enhanceBtn');
+    const bassTrebleSlider = document.getElementById('bassTreble');
+    const bassTrebleValue = document.getElementById('bassTrebleValue');
+    const progressStatus = document.getElementById('progressStatus'); // Added for audio progress
+    const progressPercentage = document.getElementById('progressPercentage'); // Added for audio progress
+    const currentFile = document.getElementById('currentFile'); // Added for audio progress
+    const uploadSpeed = document.getElementById('uploadSpeed'); // Added for audio progress
+    const uploadedSize = document.getElementById('uploadedSize'); // Added for audio progress
+    const timeRemaining = document.getElementById('timeRemaining'); // Added for audio progress
+
     // === Variables ===
     let selectedFiles = [];
     let convertedFiles = [];
@@ -33,31 +43,37 @@ document.addEventListener('DOMContentLoaded', function () {
     let audioContext, analyser, dataArray;
     let canvasCtx = audioVisualizer ? audioVisualizer.getContext('2d') : null;
 
+    // Audio Enhancer specific state variables
+    let selectedAudioFile = null; // For audio enhancement
+    let enhancedAudioFile = null; // For audio enhancement
+    let audioStartTime = 0; // For audio enhancement progress tracking
+
     // === Theme Initialization (WORKS ON ALL PAGES) ===
-    if (themeToggle) {
+    function initializeTheme() {
+        const themeToggle = document.getElementById('themeToggle');
+        if (!themeToggle) return;
+
+        // Get saved theme or system preference
         let savedTheme = localStorage.getItem('theme');
         if (!savedTheme) {
             savedTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+            localStorage.setItem('theme', savedTheme); // Save initial preference
         }
-        // Always set the theme on page load
+
+        // Apply theme immediately
         document.documentElement.setAttribute('data-theme', savedTheme);
         themeToggle.checked = savedTheme === 'dark';
         themeToggle.setAttribute('aria-checked', themeToggle.checked ? 'true' : 'false');
 
-        // Remove any previous event listeners
-        themeToggle.onchange = null;
-        themeToggle.oninput = null;
-
-        // Use 'change' event for best reliability
-        themeToggle.addEventListener('change', function() {
+        // Theme toggle change handler
+        themeToggle.addEventListener('change', function () {
             const theme = this.checked ? 'dark' : 'light';
             document.documentElement.setAttribute('data-theme', theme);
             localStorage.setItem('theme', theme);
-            // Fix: aria-checked must be a string "true"/"false"
             themeToggle.setAttribute('aria-checked', this.checked ? 'true' : 'false');
         });
 
-        // Listen for system theme changes only if user hasn't set a preference
+        // Listen for system theme changes
         window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
             if (!localStorage.getItem('theme')) {
                 const theme = e.matches ? 'dark' : 'light';
@@ -68,8 +84,11 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
+    // Initialize theme immediately
+    initializeTheme();
+
     // === Theme Toggle and Batch Toggle Label Highlight ===
-    (function() {
+    (function () {
         // --- THEME TOGGLE LOGIC (robust for all pages) ---
         const themeToggle = document.getElementById('themeToggle');
         if (themeToggle) {
@@ -89,7 +108,7 @@ document.addEventListener('DOMContentLoaded', function () {
             themeToggle.oninput = null;
 
             // Use 'change' event for best reliability (not 'input')
-            themeToggle.addEventListener('change', function() {
+            themeToggle.addEventListener('change', function () {
                 const theme = this.checked ? 'dark' : 'light';
                 html.setAttribute('data-theme', theme);
                 localStorage.setItem('theme', theme);
@@ -143,8 +162,12 @@ document.addEventListener('DOMContentLoaded', function () {
         dropZone.addEventListener('drop', e => {
             e.preventDefault();
             dropZone.classList.remove('active');
-            const files = e.dataTransfer.files;
-            isBatchMode ? processMultipleFiles(files) : processFile(files[0]);
+            // Distinguish between video and audio drop based on the page context
+            if (window.location.pathname === '/audio-enhancer') {
+                handleAudioFile(e.dataTransfer.files[0]);
+            } else {
+                isBatchMode ? processMultipleFiles(e.dataTransfer.files) : processFile(e.dataTransfer.files[0]);
+            }
         });
 
         dropZone.addEventListener('click', (e) => {
@@ -158,8 +181,12 @@ document.addEventListener('DOMContentLoaded', function () {
     if (fileInput) {
         fileInput.addEventListener('click', (e) => e.stopPropagation());
         fileInput.addEventListener('change', e => {
-            const files = e.target.files;
-            isBatchMode ? processMultipleFiles(files) : processFile(files[0]);
+            // Distinguish between video and audio file input based on the page context
+            if (window.location.pathname === '/audio-enhancer') {
+                handleAudioFile(e.target.files[0]);
+            } else {
+                isBatchMode ? processMultipleFiles(e.target.files) : processFile(e.target.files[0]);
+            }
         });
     }
 
@@ -191,6 +218,14 @@ document.addEventListener('DOMContentLoaded', function () {
             if (normalOptions) normalOptions.style.display = 'block';
         });
     });
+
+    // Audio Enhancer specific event listeners
+    if (enhanceBtn) enhanceBtn.addEventListener('click', handleAudioEnhancement);
+    if (bassTrebleSlider) {
+        bassTrebleSlider.addEventListener('input', updateBassTrebleSlider);
+        // Initialize slider background on load if it exists
+        updateBassTrebleSlider();
+    }
 
     // === Custom Error Modals ===
     function showCustomErrorModal(type, message) {
@@ -247,12 +282,17 @@ document.addEventListener('DOMContentLoaded', function () {
     // === Functions ===
 
     function validateFile(file, showAlert = true) {
+        // This function is for video conversion. A separate function `validateAudioFile` is for audio enhancement.
         if (file.type !== 'video/mp4') {
-            if (showAlert) showCustomErrorModal('file', 'Only MP4 files are allowed.');
+            if (showAlert) {
+                showCustomErrorModal('file', 'Only MP4 files are allowed.');
+            }
             return false;
         }
-        if (file.size > 500 * 1024 * 1024) {
-            if (showAlert) showCustomErrorModal('file', 'File exceeds 500MB limit.');
+        if (file.size > 200 * 1024 * 1024) {
+            if (showAlert) {
+                showCustomErrorModal('file', 'File exceeds 200MB limit.');
+            }
             return false;
         }
         return true;
@@ -261,26 +301,26 @@ document.addEventListener('DOMContentLoaded', function () {
     function resetConverter() {
         selectedFiles = [];
         convertedFiles = [];
-        
+
         if (fileInput) fileInput.value = '';
         if (fileList) fileList.innerHTML = '';
         if (fileInfo) {
-        fileInfo.textContent = 'Maximum file size: 500MB';
-        fileInfo.style.color = 'var(--text-secondary)';
+            fileInfo.textContent = 'Maximum file size: 500MB';
+            fileInfo.style.color = 'var(--text-secondary)';
         }
         if (progressContainer) progressContainer.style.display = 'none';
         if (progressBar) progressBar.style.width = '0%';
         if (resultSection) resultSection.style.display = 'none';
         if (convertBtn) {
-        convertBtn.disabled = true;
+            convertBtn.disabled = true;
             convertBtn.textContent = 'Convert Now';
         }
         if (audioPreview) {
-        audioPreview.pause();
-        audioPreview.src = '';
+            audioPreview.pause();
+            audioPreview.src = '';
         }
         if (batchDownloadList) batchDownloadList.innerHTML = '';
-        
+
         // Reset progress indicators
         const elements = {
             'progressStatus': 'Preparing...',
@@ -316,8 +356,8 @@ document.addEventListener('DOMContentLoaded', function () {
         if (!validateFile(file)) return;
         selectedFiles = [file];
         if (fileInfo) {
-        fileInfo.textContent = `Selected: ${file.name} (${formatFileSize(file.size)})`;
-        fileInfo.style.color = 'var(--text-secondary)';
+            fileInfo.textContent = `Selected: ${file.name} (${formatFileSize(file.size)})`;
+            fileInfo.style.color = 'var(--text-secondary)';
         }
         if (convertBtn) convertBtn.disabled = false;
     }
@@ -340,10 +380,10 @@ document.addEventListener('DOMContentLoaded', function () {
         updateFileList();
         if (convertBtn) convertBtn.disabled = selectedFiles.length === 0;
         if (fileInfo) {
-        fileInfo.textContent = skipped
-            ? `Some files skipped. ${selectedFiles.length} valid file(s) selected.`
-            : `${selectedFiles.length} file(s) selected.`;
-        fileInfo.style.color = skipped ? 'red' : 'var(--text-secondary)';
+            fileInfo.textContent = skipped
+                ? `Some files skipped. ${selectedFiles.length} valid file(s) selected.`
+                : `${selectedFiles.length} file(s) selected.`;
+            fileInfo.style.color = skipped ? 'red' : 'var(--text-secondary)';
         }
     }
 
@@ -379,6 +419,92 @@ document.addEventListener('DOMContentLoaded', function () {
         return `${(bytes / 1048576).toFixed(1)} MB`;
     }
 
+    // === Utility: Upload File With Progress (make available globally) ===
+    function uploadFileWithProgress(file, url, formDataOverride = null, isAudioEnhance = false) {
+        return new Promise((resolve, reject) => {
+            const xhr = new XMLHttpRequest();
+            const formData = formDataOverride || new FormData();
+            if (!formDataOverride) formData.append('file', file);
+
+            // Progress tracking variables
+            let startTime = Date.now();
+            let lastLoaded = 0;
+            let lastTime = startTime;
+
+            xhr.upload.addEventListener('progress', (event) => {
+                if (event.lengthComputable) {
+                    const currentTime = Date.now();
+                    const timeDiff = (currentTime - lastTime) / 1000; // seconds
+                    const loadedDiff = event.loaded - lastLoaded;
+                    const currentSpeed = (loadedDiff / 1024) / timeDiff; // KB/s
+
+                    // Calculate progress percentage
+                    const progress = (event.loaded / event.total) * 100;
+                    if (progressBar) progressBar.style.width = `${progress}%`;
+                    if (progressPercentage) progressPercentage.textContent = `${Math.round(progress)}%`;
+
+                    // Update current file info
+                    if (currentFile) currentFile.textContent = file.name;
+
+                    // Update speed
+                    if (uploadSpeed) uploadSpeed.textContent = `${Math.round(currentSpeed)} KB/s`;
+
+                    // Update uploaded size
+                    if (uploadedSize) uploadedSize.textContent = `${Math.round(event.loaded / 1024)} KB`;
+
+                    // Calculate time remaining
+                    if (currentSpeed > 0 && timeRemaining) {
+                        const remainingBytes = event.total - event.loaded;
+                        const remainingSeconds = (remainingBytes / 1024) / currentSpeed;
+                        timeRemaining.textContent = remainingSeconds > 60
+                            ? `${Math.round(remainingSeconds / 60)}m ${Math.round(remainingSeconds % 60)}s`
+                            : `${Math.round(remainingSeconds)}s`;
+                    }
+
+                    // Update for next calculation
+                    lastLoaded = event.loaded;
+                    lastTime = currentTime;
+
+                    if (progressStatus) progressStatus.textContent = `Uploading ${file.name}...`;
+                }
+            });
+
+            xhr.addEventListener('load', () => {
+                if (xhr.status === 200) {
+                    // Parse headers manually
+                    const headers = {};
+                    xhr.getAllResponseHeaders().trim().split(/[\r\n]+/).forEach(line => {
+                        const parts = line.split(': ');
+                        const key = parts.shift();
+                        const value = parts.join(': ');
+                        headers[key.toLowerCase()] = value;
+                    });
+                    resolve({
+                        ok: true,
+                        blob: () => Promise.resolve(xhr.response),
+                        headers: {
+                            get: (name) => headers[name.toLowerCase()]
+                        }
+                    });
+                } else {
+                    reject(new Error(`HTTP Error: ${xhr.status}`));
+                }
+            });
+
+            xhr.addEventListener('error', () => {
+                reject(new Error('Network error occurred'));
+            });
+
+            xhr.addEventListener('abort', () => {
+                reject(new Error('Upload aborted'));
+            });
+
+            xhr.open('POST', url);
+            xhr.responseType = 'blob';
+            xhr.send(formData);
+        });
+    }
+
     async function handleConversion() {
         if (!selectedFiles.length) {
             showCustomErrorModal('file', 'Please select at least one file to convert.');
@@ -404,90 +530,12 @@ document.addEventListener('DOMContentLoaded', function () {
         uploadedSize.textContent = '0 KB';
         timeRemaining.textContent = 'Calculating...';
 
-        convertBtn.disabled = true;
-        convertBtn.textContent = 'Converting...';
         convertedFiles = [];
 
         const RENDER_BACKEND_URL = 'https://sound-shift.onrender.com/convert';
         const LOCAL_BACKEND_URL = 'http://127.0.0.1:5000/convert';
         const backendUrl = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
             ? LOCAL_BACKEND_URL : RENDER_BACKEND_URL;
-
-        // Function to handle file upload with progress
-        function uploadFileWithProgress(file, url) {
-            return new Promise((resolve, reject) => {
-                const xhr = new XMLHttpRequest();
-                const formData = new FormData();
-                formData.append('file', file);
-                // Progress tracking variables
-                let startTime = Date.now();
-                let lastLoaded = 0;
-                let lastTime = startTime;
-
-                xhr.upload.addEventListener('progress', (event) => {
-                    if (event.lengthComputable) {
-                        const currentTime = Date.now();
-                        const timeDiff = (currentTime - lastTime) / 1000; // seconds
-                        const loadedDiff = event.loaded - lastLoaded;
-                        const currentSpeed = (loadedDiff / 1024) / timeDiff; // KB/s
-
-                        // Calculate progress percentage
-                        const progress = (event.loaded / event.total) * 100;
-                        progressBar.style.width = `${progress}%`;
-                        progressPercentage.textContent = `${Math.round(progress)}%`;
-                        
-                        // Update current file info
-                        currentFile.textContent = file.name;
-                        
-                        // Update speed
-                        uploadSpeed.textContent = `${Math.round(currentSpeed)} KB/s`;
-                        
-                        // Update uploaded size
-                        uploadedSize.textContent = `${Math.round(event.loaded / 1024)} KB`;
-                        
-                        // Calculate time remaining
-                        if (currentSpeed > 0) {
-                            const remainingBytes = event.total - event.loaded;
-                            const remainingSeconds = (remainingBytes / 1024) / currentSpeed;
-                            timeRemaining.textContent = remainingSeconds > 60 
-                                ? `${Math.round(remainingSeconds / 60)}m ${Math.round(remainingSeconds % 60)}s`
-                                : `${Math.round(remainingSeconds)}s`;
-                        }
-
-                        // Update for next calculation
-                        lastLoaded = event.loaded;
-                        lastTime = currentTime;
-                        
-                        progressStatus.textContent = `Uploading ${file.name}...`;
-                    }
-                });
-
-                xhr.addEventListener('load', () => {
-                    if (xhr.status === 200) {
-                        try {
-                            const response = new Response(xhr.response);
-                            resolve(response);
-                        } catch (error) {
-                            reject(new Error('Invalid response format'));
-                        }
-                    } else {
-                        reject(new Error(`HTTP Error: ${xhr.status}`));
-                    }
-                });
-
-                xhr.addEventListener('error', () => {
-                    reject(new Error('Network error occurred'));
-                });
-
-                xhr.addEventListener('abort', () => {
-                    reject(new Error('Upload aborted'));
-                });
-
-                xhr.open('POST', url);
-                xhr.responseType = 'blob';
-                xhr.send(formData);
-            });
-        }
 
         // Batch mode handling
         if (isBatchMode && selectedFiles.length > 1) {
@@ -501,20 +549,20 @@ document.addEventListener('DOMContentLoaded', function () {
             try {
                 progressStatus.textContent = 'Preparing batch upload...';
                 const response = await uploadFileWithProgress(selectedFiles[0], backendUrl);
-                
+
                 if (!response.ok) throw new Error('Conversion failed');
 
-            const blob = await response.blob();
+                const blob = await response.blob();
                 if (!blob || blob.size === 0) throw new Error('Empty response');
 
                 const filename = response.headers.get('Content-Disposition')?.match(/filename="?([^"]+)"?/)?.[1] || 'converted_mp3s.zip';
-            const url = URL.createObjectURL(blob);
-            convertedFiles = [{ url, filename }];
+                const url = URL.createObjectURL(blob);
+                convertedFiles = [{ url, filename }];
 
                 progressStatus.textContent = 'Batch conversion complete!';
                 progressBar.style.width = '100%';
                 progressPercentage.textContent = '100%';
-            showResult();
+                showResult();
 
             } catch (error) {
                 showCustomErrorModal('conversion', error.message || 'Conversion failed. Please try again.');
@@ -535,7 +583,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 const blob = await response.blob();
                 if (!blob || blob.size === 0) throw new Error('Empty response');
 
-                const filename = response.headers.get('Content-Disposition')?.match(/filename="?([^"]+)"?/)?.[1] || 'converted.mp3';
+                const filename = response.headers.get('content-disposition')?.match(/filename="?([^"]+)"?/)?.[1] || 'converted.mp3';
                 const url = URL.createObjectURL(blob);
                 convertedFiles.push({ url, filename });
 
@@ -585,6 +633,49 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
 
+    // --- Download logic: only trigger one download per tool ---
+    function downloadEnhancedFile() {
+        if (!enhancedAudioFile) return;
+        const a = document.createElement('a');
+        a.href = enhancedAudioFile.url;
+        a.download = enhancedAudioFile.filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+    }
+
+    // Attach download event only once, and always overwrite previous handlers
+    function setDownloadBtnHandler() {
+        if (!downloadBtn) return;
+        // Remove all previous event listeners by replacing the node
+        const newDownloadBtn = downloadBtn.cloneNode(true);
+        downloadBtn.parentNode.replaceChild(newDownloadBtn, downloadBtn);
+
+        newDownloadBtn.onclick = function (e) {
+            e.preventDefault();
+            if (isAudioEnhancerPage() && enhancedAudioFile) {
+                downloadEnhancedFile();
+            } else if (convertedFiles.length > 0) {
+                // MP4 to MP3 tool
+                const fileObj = convertedFiles[0];
+                const a = document.createElement('a');
+                a.href = fileObj.url;
+                a.download = fileObj.filename;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+            }
+        };
+    }
+
+    // --- Audio preview logic for enhancer: REMOVE preview and visualizer ---
+    function showAudioResult() {
+        if (resultSection) resultSection.style.display = 'block';
+        // Do NOT set audioPreview.src or show audioPreview for enhancer
+        setDownloadBtnHandler();
+    }
+
+    // --- Audio preview logic for converter: KEEP preview ---
     function showResult() {
         if (resultMessage) {
             resultMessage.textContent = 'Conversion completed successfully!';
@@ -615,13 +706,13 @@ document.addEventListener('DOMContentLoaded', function () {
                     document.body.appendChild(a);
                     a.click();
                     document.body.removeChild(a);
-                    
+
                     // Delete the ZIP file after download
                     await deleteConvertedFile(fileObj.filename);
-                    
+
                     // Clean up the URL object
                     URL.revokeObjectURL(fileObj.url);
-                    
+
                     // Reset the converter after a short delay
                     setTimeout(resetConverter, 500);
                 };
@@ -638,7 +729,7 @@ document.addEventListener('DOMContentLoaded', function () {
             audioPreview.src = fileObj.url;
             audioPreview.load();
             audioPreview.style.display = 'block';
-
+            setupAudioVisualization();
             if (downloadAllBtn) downloadAllBtn.style.display = 'none';
             if (downloadBtn) downloadBtn.style.display = 'inline-block';
 
@@ -657,13 +748,13 @@ document.addEventListener('DOMContentLoaded', function () {
                 document.body.appendChild(a);
                 a.click();
                 document.body.removeChild(a);
-                
+
                 // Delete the file after download
                 await deleteConvertedFile(fileObj.filename);
-                
+
                 // Clean up the URL object
                 URL.revokeObjectURL(fileObj.url);
-                
+
                 // Reset the converter after a short delay
                 setTimeout(resetConverter, 500);
             };
@@ -678,17 +769,17 @@ document.addEventListener('DOMContentLoaded', function () {
                     document.body.appendChild(a);
                     a.click();
                     document.body.removeChild(a);
-                    
+
                     // Delete each file after download
                     await deleteConvertedFile(fileObj.filename);
-                    
+
                     // Clean up the URL object
                     URL.revokeObjectURL(fileObj.url);
                 }
                 // Reset the converter after all files are downloaded
                 setTimeout(resetConverter, 500);
             };
-            
+
             // Update batch download list with individual file downloads
             batchDownloadList.innerHTML = '';
             convertedFiles.forEach((fileObj, idx) => {
@@ -698,27 +789,27 @@ document.addEventListener('DOMContentLoaded', function () {
                     <span>File ${idx + 1}</span>
                     <button class="batch-download-btn">Download</button>
                 `;
-                
+
                 const downloadBtn = listItem.querySelector('.batch-download-btn');
-                downloadBtn.onclick = async function() {
+                downloadBtn.onclick = async function () {
                     const a = document.createElement('a');
                     a.href = fileObj.url;
                     a.download = fileObj.filename;
                     document.body.appendChild(a);
                     a.click();
                     document.body.removeChild(a);
-                    
+
                     // Delete the individual file after download
                     await deleteConvertedFile(fileObj.filename);
-                    
+
                     // Clean up the URL object
                     URL.revokeObjectURL(fileObj.url);
-                    
+
                     // Disable the button after download
                     this.disabled = true;
                     this.textContent = 'Downloaded';
                 };
-                
+
                 batchDownloadList.appendChild(listItem);
             });
         }
@@ -742,34 +833,32 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     function setupAudioVisualization() {
-        // Fix: Prevent multiple MediaElementSourceNode connections
         if (!audioContext) {
             audioContext = new (window.AudioContext || window.webkitAudioContext)();
         }
 
-        // Disconnect previous source if exists
-        if (audioPreview._mediaSource) {
-            try {
-                audioPreview._mediaSource.disconnect();
-            } catch (e) {}
-            audioPreview._mediaSource = null;
-        }
-
-        // Only create a new source if not already connected
+        // Only create a MediaElementSource once per audio element
         if (!audioPreview._mediaSource) {
             try {
-                analyser = audioContext.createAnalyser();
-                analyser.fftSize = 256;
-                dataArray = new Uint8Array(analyser.frequencyBinCount);
-
                 audioPreview._mediaSource = audioContext.createMediaElementSource(audioPreview);
-                audioPreview._mediaSource.connect(analyser);
-                analyser.connect(audioContext.destination);
             } catch (e) {
                 console.warn("Audio visualization setup failed:", e);
                 return;
             }
         }
+
+        // Always create a new analyser and connect it
+        analyser = audioContext.createAnalyser();
+        analyser.fftSize = 256;
+        dataArray = new Uint8Array(analyser.frequencyBinCount);
+
+        // Disconnect previous connections if needed
+        try {
+            audioPreview._mediaSource.disconnect();
+        } catch (e) { }
+
+        audioPreview._mediaSource.connect(analyser);
+        analyser.connect(audioContext.destination);
 
         drawVisualizer();
     }
@@ -794,13 +883,135 @@ document.addEventListener('DOMContentLoaded', function () {
     // === Contact Form Handler (for contact.html) ===
     const contactForm = document.getElementById('contactForm');
     if (contactForm) {
-        contactForm.addEventListener('submit', function(e) {
+        contactForm.addEventListener('submit', function (e) {
             e.preventDefault();
             showCustomErrorModal('success', "Thank you for contacting us! We'll get back to you soon.");
-                contactForm.reset();
+            contactForm.reset();
         });
     }
 
-    // Example: If you ever set an image src in JS, do:
-    // img.src = '/static/myimage.png';
+    // Audio Enhancer specific functions
+    function updateBassTrebleSlider() {
+        if (!bassTrebleSlider || !bassTrebleValue) return;
+
+        const value = bassTrebleSlider.value;
+        const min = bassTrebleSlider.min;
+        const max = bassTrebleSlider.max;
+        const percentage = ((value - min) / (max - min)) * 100;
+
+        bassTrebleValue.textContent = value;
+        bassTrebleSlider.style.background = `linear-gradient(to right, var(--primary-color) ${percentage}%, var(--border-color) ${percentage}%)`;
+    }
+
+    function handleAudioFile(file) {
+        if (!validateAudioFile(file)) return;
+
+        selectedAudioFile = file;
+        if (fileInfo) fileInfo.textContent = `Selected: ${file.name} (${formatFileSize(file.size)})`;
+        if (fileInfo) fileInfo.style.color = 'var(--text-secondary)';
+        if (enhanceBtn) enhanceBtn.disabled = false;
+    }
+
+    function validateAudioFile(file) {
+        console.log("File type being validated:", file.type);
+        const validTypes = ['audio/mp3', 'audio/wav', 'audio/mpeg'];
+        if (!validTypes.includes(file.type)) {
+            showCustomErrorModal('file', 'Only MP3 and WAV files are allowed.');
+            return false;
+        }
+        if (file.size > 500 * 1024 * 1024) {
+            showCustomErrorModal('file', 'File exceeds 500MB limit.');
+            return false;
+        }
+        return true;
+    }
+
+    async function handleAudioEnhancement() {
+        if (!selectedAudioFile) return;
+
+        if (enhanceBtn) {
+            enhanceBtn.disabled = true;
+            enhanceBtn.textContent = 'Enhancing...';
+        }
+        if (progressContainer) progressContainer.style.display = 'block';
+        if (progressBar) progressBar.style.width = '0%';
+        audioStartTime = Date.now();
+
+        const formData = new FormData();
+        formData.append('file', selectedAudioFile);
+        formData.append('volumeBoost', document.getElementById('volumeBoost').checked);
+        formData.append('noiseReduction', document.getElementById('noiseReduction').checked);
+        formData.append('bassTreble', bassTrebleSlider.value);
+
+        try {
+            const response = await uploadFileWithProgress(selectedAudioFile, '/enhance', formData, true);
+
+            if (!response.ok) throw new Error('Enhancement failed');
+
+            const blob = await response.blob();
+            if (!blob || blob.size === 0) throw new Error('Empty response');
+
+            const filename = response.headers.get('content-disposition')?.match(/filename="?([^"]+)"?/)?.[1] || 'enhanced_audio.mp3';
+            enhancedAudioFile = { url: URL.createObjectURL(blob), filename };
+
+            if (progressStatus) progressStatus.textContent = 'Enhancement complete!';
+            if (progressBar) progressBar.style.width = '100%';
+            if (progressPercentage) progressPercentage.textContent = '100%';
+
+            showAudioResult();
+        } catch (error) {
+            showCustomErrorModal('enhancement', error.message || 'Enhancement failed. Please try again.');
+            resetAudioProgress();
+        }
+    }
+
+    // Helper to detect if we're on the audio enhancer page
+    function isAudioEnhancerPage() {
+        return window.location.pathname === '/audio-enhancer';
+    }
+
+    // Ensure the overall resetConverter also resets audio progress if applicable
+    const originalResetConverter = resetConverter; // Save original for chaining
+    resetConverter = function () {
+        originalResetConverter();
+        resetAudioProgress();
+        // Additional resets if needed based on audio context
+        if (audioPreview) audioPreview.src = '';
+        if (resultSection) resultSection.style.display = 'none';
+    };
+
+    // Ensure that audio visualizer uses audioContext and analyser when playing audio
+    // (This part is already in updated_script.js, ensure it works for audio as well)
+    // if (audioPreview) audioPreview.addEventListener('play', setupAudioVisualization);
+
+    // Modify downloadFile to handle both video and audio downloads
+    const originalDownloadFile = downloadFile;
+    downloadFile = function (e) {
+        // Prevent double download on audio enhancer page
+        if (window.location.pathname === '/audio-enhancer' && enhancedAudioFile) {
+            if (e) e.preventDefault();
+            downloadEnhancedFile();
+            return false;
+        } else {
+            if (e) e.preventDefault();
+            originalDownloadFile();
+        }
+    };
+
+    // Popup functions
+    function openPopup(popupId) {
+        const popup = document.getElementById(popupId);
+        if (popup) {
+            popup.style.display = 'block';
+            document.body.style.overflow = 'hidden';
+        }
+    }
+
+    function closePopup(popupId) {
+        const popup = document.getElementById(popupId);
+        if (popup) {
+            popup.style.display = 'none';
+            document.body.style.overflow = 'auto';
+        }
+    }
 });

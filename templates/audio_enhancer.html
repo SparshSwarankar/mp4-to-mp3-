@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="light">
+<html lang="en">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SoundShift - Tools</title>
+    <title>Audio Enhancer - SoundShift</title>
     <link rel="stylesheet" href="/static/styles.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="shortcut icon" href="/static/icons8-sound-3d-fluency-96.png" type="image/x-icon">
@@ -20,11 +20,12 @@
                     <li><a href="/about"><i class="fas fa-info-circle"></i> About</a></li>
                     <li><a href="/tools"><i class="fas fa-toolbox"></i> Tools</a></li>
                     <li><a href="/contact"><i class="fas fa-envelope"></i> Contact</a></li>
+
                 </ul>
                 <div class="theme-toggle" id="themeToggleContainer">
                     <i class="fas fa-sun"></i>
                     <label class="switch" aria-label="Toggle dark mode">
-                        <input type="checkbox" id="themeToggle" aria-checked="false" />
+                        <input type="checkbox" id="themeToggle" aria-checked="false">
                         <span class="slider round"></span>
                     </label>
                     <i class="fas fa-moon"></i>
@@ -35,51 +36,135 @@
         <main>
             <section class="hero">
                 <div class="hero-content">
-                    <h1>Our Tools</h1>
-                    <p>Discover all the audio and video tools offered by SoundShift.</p>
+                    <h1>Audio Enhancer</h1>
+                    <p>Enhance your audio files for better quality and clarity</p>
+                    <div class="wave-animation">
+                        <div class="wave"></div>
+                        <div class="wave"></div>
+                        <div class="wave"></div>
+                        <div class="wave"></div>
+                        <div class="wave"></div>
+                        <div class="wave"></div>
+                        <div class="wave"></div>
+                    </div>
                 </div>
-
             </section>
 
-            <section class="tools-section">
-                <div class="tools-features-grid">
-                    <div class="tools-feature-card">
-                        <div class="feature-icon">
-                            <i class="fas fa-file-audio"></i>
-                        </div>
-                        <h3>MP4 to MP3 Converter</h3>
-                        <p>Convert your MP4 videos to high-quality MP3 audio files quickly and easily.</p>
-                        <a href="/" class="convert-btn" style="margin-top:12px;">Try Now</a>
+            <section class="converter">
+                <div class="converter-card">
+                    <div class="upload-area" id="dropZone">
+                        <i class="fas fa-cloud-upload-alt"></i>
+                        <h3 id="uploadTitle">Drag & Drop your audio file here</h3>
+                        <p>or</p>
+                        <label for="fileInput" class="upload-btn">Browse Files</label>
+                        <input type="file" id="fileInput" accept="audio/mp3,audio/wav,audio/mpeg" hidden>
+                        <p class="file-info" id="fileInfo">Maximum file size: 500MB</p>
+                        <div id="fileList" class="file-list"></div>
                     </div>
-                    <div class="tools-feature-card">
-                        <div class="feature-icon">
-                            <i class="fas fa-magic"></i>
+
+                    <div class="conversion-options">
+                        <h3>Enhancement Options</h3>
+                        <div class="option-details">
+                            <div class="option-row">
+                                <label>Volume Boost</label>
+                                <label class="switch">
+                                    <input type="checkbox" id="volumeBoost">
+                                    <span class="slider round"></span>
+                                </label>
+                            </div>
+                            <div class="option-row">
+                                <label>Noise Reduction</label>
+                                <label class="switch">
+                                    <input type="checkbox" id="noiseReduction">
+                                    <span class="slider round"></span>
+                                </label>
+                            </div>
+                            <div class="option-row">
+                                <label>Bass/Treble</label>
+                                <div class="slider-container">
+                                    <input type="range" id="bassTreble" min="-10" max="10" value="0">
+                                    <span id="bassTrebleValue">0</span>
+                                </div>
+                            </div>
                         </div>
-                        <h3>Audio Enhancer</h3>
-                        <p>Enhance your audio files for clarity, volume, and quality.</p>
-                        <a href="/audio-enhancer" class="convert-btn" style="margin-top:12px;">Try Now</a>
                     </div>
-                    <div class="tools-feature-card">
-                        <div class="feature-icon">
-                            <i class="fas fa-exchange-alt"></i>
+
+                    <div class="progress-container" id="progressContainer" style="display: none;">
+                        <div class="progress-status">
+                            <span id="progressStatus">Preparing...</span>
+                            <span id="progressPercentage">0%</span>
                         </div>
-                        <h3>Video Converter</h3>
-                        <p>Convert videos between different formats with ease.</p>
-                        <a href="https://free2formate.up.railway.app" class="convert-btn"
-                            style="margin-top:12px;">Try Now</a>
-                    </div>
-                    <div class="tools-feature-card">
-                        <div class="feature-icon">
-                            <i class="fas fa-cut"></i>
+                        <div class="progress-bar-container">
+                            <div class="progress-bar" id="progressBar">
+                                <div class="progress-glow"></div>
+                            </div>
                         </div>
-                        <h3>Audio Trimmer</h3>
-                        <p>Trim your audio files to the perfect length for ringtones, podcasts, and more.</p>
-                        <a href="#" class="convert-btn" style="margin-top:12px;" aria-disabled="true" disabled>Coming
-                            Soon</a>
+                        <div class="progress-details">
+                            <div class="progress-detail">
+                                <span class="detail-label">File:</span>
+                                <span id="currentFile">-</span>
+                            </div>
+                            <div class="progress-detail">
+                                <span class="detail-label">Speed:</span>
+                                <span id="uploadSpeed">0 KB/s</span>
+                            </div>
+                            <div class="progress-detail">
+                                <span class="detail-label">Uploaded:</span>
+                                <span id="uploadedSize">0 KB</span>
+                            </div>
+                            <div class="progress-detail">
+                                <span class="detail-label">Remaining:</span>
+                                <span id="timeRemaining">Calculating...</span>
+                            </div>
+                        </div>
+                        <div id="conversionStatus" class="conversion-status"></div>
                     </div>
+
+                    <button id="enhanceBtn" class="convert-btn" disabled>Enhance Audio</button>
+                </div>
+            </section>
+
+            <section class="result-section" id="resultSection" style="display: none;">
+                <div class="result-card">
+                    <div class="success-icon">
+                        <i class="fas fa-check-circle"></i>
+                    </div>
+                    <h3>Enhancement Complete!</h3>
+                    <p id="resultMessage">Your enhanced audio file is ready to download</p>
+
+                    <button id="downloadBtn" class="download-btn">
+                        <i class="fas fa-download"></i> Download Enhanced Audio
+                    </button>
                 </div>
             </section>
         </main>
+
+        <section class="features">
+            <h2>Why Choose Our Audio Enhancer</h2>
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-volume-up"></i>
+                    </div>
+                    <h3>Volume Boost</h3>
+                    <p>Increase audio volume while maintaining quality</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-filter"></i>
+                    </div>
+                    <h3>Noise Reduction</h3>
+                    <p>Remove background noise and improve clarity</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-sliders-h"></i>
+                    </div>
+                    <h3>Bass/Treble Control</h3>
+                    <p>Fine-tune your audio with precise equalization</p>
+                </div>
+            </div>
+        </section>
 
         <footer>
             <div class="footer-modern">
@@ -260,45 +345,13 @@
                     <li>Your browser and operating system</li>
                     <li>Any error messages you received</li>
                 </ul>
-                <p>Use our <a href="/contact">Contact form</a> to submit your report, and we'll get back to you as soon
-                    as possible.</p>
+                <p>Use our <a href="/contact">Contact form</a> to submit your report, and we'll get back to you as
+                    soon as possible.</p>
             </div>
         </div>
-
-    </div>
     </div>
 
     <script src="/static/updated_script.js"></script>
-    <script>
-        function openPopup(id) {
-            document.getElementById(id).style.display = "block";
-        }
-
-        function closePopup(id) {
-            document.getElementById(id).style.display = "none";
-        }
-
-        window.onclick = function (event) {
-            const popups = document.querySelectorAll('.popup');
-            popups.forEach(popup => {
-                if (event.target === popup) {
-                    popup.style.display = "none";
-                }
-            });
-        };
-    </script>
-
-    <!-- Custom Error Modal -->
-    <div id="customErrorModal" style="display: none;">
-        <div class="custom-modal-overlay"></div>
-        <div class="custom-modal-content">
-            <div class="custom-modal-icon"></div>
-            <div class="custom-modal-title"></div>
-            <div class="custom-modal-message"></div>
-            <button class="custom-modal-close">Close</button>
-        </div>
-    </div>
 </body>
 
 </html>
-```

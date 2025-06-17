@@ -37,6 +37,13 @@ app.config['CONVERTED_FOLDER'] = os.path.join(os.path.dirname(os.path.abspath(__
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 os.makedirs(app.config['CONVERTED_FOLDER'], exist_ok=True)
 
+# Allowed extensions for audio enhancement
+ALLOWED_EXTENSIONS = {'mp3', 'wav'}
+
+def allowed_file(filename):
+    return '.' in filename and \
+           filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
 @app.route('/')
 def home():
     return render_template('index.html')
@@ -298,9 +305,89 @@ def convert():
         resp.headers['Access-Control-Allow-Origin'] = '*'
         return resp, 500
 
-@app.route('/')
-def index():
-    return 'MP4 to MP3 backend is running.'
+@app.route('/audio-enhancer')
+def audio_enhancer():
+    return render_template('audio_enhancer.html')
+
+@app.route('/enhance', methods=['POST'])
+def enhance_audio():
+    if 'file' not in request.files:
+        return jsonify({'error': 'No file provided'}), 400
+    
+    file = request.files['file']
+    if file.filename == '':
+        return jsonify({'error': 'No file selected'}), 400
+    
+    if not allowed_file(file.filename):
+        return jsonify({'error': 'Unsupported file type. Only MP3 and WAV are allowed.'}), 400
+    
+    # Get enhancement options
+    volume_boost = request.form.get('volumeBoost') == 'true'
+    noise_reduction = request.form.get('noiseReduction') == 'true'
+    bass_treble = int(request.form.get('bassTreble', 0))
+    
+    input_path = ""
+    output_path = ""
+
+    try:
+        # Save uploaded file
+        filename = secure_filename(file.filename)
+        input_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+        file.save(input_path)
+        
+        # Prepare output filename (avoid double "enhanced_")
+        if filename.startswith("enhanced_"):
+            output_filename = filename
+        else:
+            output_filename = f"enhanced_{filename}"
+        output_path = os.path.join(app.config['CONVERTED_FOLDER'], output_filename)
+        
+        # Build FFmpeg filter chain
+        filters = []
+        if volume_boost:
+            filters.append('volume=1.5')
+        if noise_reduction:
+            filters.append('afftdn=nf=-25')
+        if bass_treble != 0:
+            db_adjust = (bass_treble / 10) * 6
+            filters.append(f'equalizer=f=1000:width_type=h:width=200:g={db_adjust}')
+        
+        ffmpeg_cmd = ['ffmpeg', '-y', '-i', input_path]
+        if filters:
+            ffmpeg_cmd.extend(['-af', ','.join(filters)])
+        ffmpeg_cmd.append(output_path)
+        
+        # Log the command for debugging
+        print("Running FFmpeg command:", " ".join(ffmpeg_cmd))
+        
+        # Run FFmpeg command
+        result = subprocess.run(
+            ffmpeg_cmd,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE
+        )
+        
+        if result.returncode != 0:
+            print("FFmpeg stderr:", result.stderr.decode())
+            raise Exception(f'Audio enhancement failed: {result.stderr.decode()}')
+        
+        # Return enhanced file
+        return send_file(
+            output_path,
+            as_attachment=True,
+            download_name=output_filename,
+            mimetype='audio/mpeg'
+        )
+        
+    except Exception as e:
+        # Clean up files in case of error
+        if os.path.exists(input_path):
+            os.remove(input_path)
+        if os.path.exists(output_path):
+            os.remove(output_path)
+        
+        print("Enhance error:", str(e))  # Log the error for debugging
+        return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000,debug=True)

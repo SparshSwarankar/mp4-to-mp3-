@@ -241,64 +241,58 @@ nav ul li a:hover {
 }
 
 .switch {
-    width: 44px;
-    height: 22px;
-    margin: 0 4px;
     position: relative;
     display: inline-block;
-    vertical-align: middle;
+    width: 60px;
+    height: 34px;
 }
 
-.switch input[type="checkbox"] {
+.switch input {
     opacity: 0;
-    width: 100%;
-    height: 100%;
-    position: absolute;
-    left: 0;
-    top: 0;
-    z-index: 2;
-    cursor: pointer;
-    margin: 0;
-    padding: 0;
-    pointer-events: auto;
+    width: 0;
+    height: 0;
 }
 
 .slider {
-    background-color: #fff;
     position: absolute;
-    width: 100%;
-    height: 100%;
     cursor: pointer;
     top: 0;
     left: 0;
-    border-radius: 18px;
-    transition: background 0.4s;
-    z-index: 1;
+    right: 0;
+    bottom: 0;
+    background-color: var(--border-color);
+    transition: .4s;
 }
 
 .slider:before {
     position: absolute;
     content: "";
-    height: 18px;
-    width: 18px;
-    left: 3px;
-    bottom: 2px;
-    background-color: var(--primary-color);
+    height: 26px;
+    width: 26px;
+    left: 4px;
+    bottom: 4px;
+    background-color: white;
     transition: .4s;
-    border-radius: 50%;
 }
 
-.switch input[type="checkbox"]:checked+.slider {
+input:checked + .slider {
     background-color: var(--primary-color);
 }
 
-.switch input[type="checkbox"]:checked+.slider:before {
-    background-color: #fff;
-    transform: translateX(22px);
+input:focus + .slider {
+    box-shadow: 0 0 1px var(--primary-color);
 }
 
-.switch input[type="checkbox"]:focus+.slider {
-    box-shadow: 0 0 1px var(--primary-color);
+input:checked + .slider:before {
+    transform: translateX(26px);
+}
+
+.slider.round {
+    border-radius: 34px;
+}
+
+.slider.round:before {
+    border-radius: 50%;
 }
 
 /* Batch Toggle */
@@ -379,29 +373,213 @@ nav ul li a:hover {
 }
 
 @media (max-width: 600px) {
+    .container {
+        padding: 0 4vw;
+    }
+
     header {
         border-radius: 0 0 12px 12px;
         margin-bottom: 10px;
     }
 
     nav {
-        padding: 6px 2px;
+        flex-direction: column;
+        align-items: stretch;
+        padding: 8px 2px;
+        gap: 0;
     }
 
     .logo {
+        font-size: 18px;
+        margin-bottom: 8px;
+        text-align: center;
+    }
+
+    nav ul {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 0;
+        width: 100%;
+        margin: 0 0 10px 0;
+    }
+
+    nav ul li {
+        width: 100%;
+    }
+
+    nav ul li a {
+        display: block;
+        width: 100%;
+        text-align: left;
+        font-size: 14px;
+        padding: 10px 8px;
+        border-radius: 6px;
+        margin-bottom: 2px;
+    }
+
+    .theme-toggle {
+        align-self: flex-end;
+        margin-bottom: 8px;
+        padding: 2px 4px;
+        font-size: 15px;
+    }
+
+    .converter-card {
+        max-width: 99vw !important;
+        padding: 14px 2vw;
+        margin: 12px auto 18px auto;
+    }
+
+    .upload-area {
+        padding: 18px 4vw;
+    }
+
+    .option-details {
+        padding: 12px 4vw;
+    }
+
+    .option-row {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+    }
+
+    .option-row label {
+        margin-bottom: 4px;
+        font-size: 1em;
+    }
+
+    .slider-container {
+        width: 100%;
+        gap: 8px;
+    }
+
+    .progress-container {
+        padding: 12px 4vw;
+    }
+
+    .progress-details {
+        grid-template-columns: 1fr;
+        gap: 10px;
+        padding: 10px 0;
+    }
+
+    .result-card {
+        padding: 16px 2vw;
+        max-width: 99vw;
+    }
+
+    .audio-player {
+        margin-bottom: 18px;
+    }
+
+    .visualizer-container {
+        padding: 6px;
+        margin-bottom: 10px;
+    }
+
+    #audioVisualizer {
+        min-height: 36px;
+    }
+
+    .features {
+        padding: 30px 0;
+    }
+
+    .features h2 {
+        font-size: 22px;
+        margin-bottom: 18px;
+    }
+
+    .features-grid {
+        grid-template-columns: 1fr;
+        gap: 12px;
+    }
+
+    .feature-card {
+        padding: 14px 8px;
+    }
+
+    .feature-icon {
+        font-size: 28px;
+        margin-bottom: 10px;
+    }
+
+    .footer-modern {
+        padding: 18px 0 8px 0;
+        border-radius: 10px 10px 0 0;
+        margin-top: 18px;
+    }
+
+    .footer-main {
+        flex-direction: column;
+        gap: 10px;
+        padding: 0 4vw;
+    }
+
+    .footer-logo {
         font-size: 16px;
         margin-bottom: 8px;
     }
 
-    nav ul li a {
-        font-size: 14px;
-        padding: 8px 8px;
+    .footer-desc {
+        font-size: 11px;
     }
 
-    .theme-toggle {
-        padding: 2px 4px;
-        font-size: 15px;
+    .footer-column-modern h4 {
+        font-size: 13px;
+    }
 
+    .footer-bottom {
+        font-size: 11px;
+        gap: 2px;
+    }
+
+    .footer-links-modern {
+        flex-direction: column;
+        gap: 8px;
+        width: 100%;
+    }
+
+    .footer-column-modern {
+        min-width: 0;
+        margin-bottom: 8px;
+    }
+
+    /* Floating button */
+    #audioEnhancerFab {
+        right: 12px;
+        bottom: 12px;
+        width: 44px;
+        height: 44px;
+        font-size: 1.3rem;
+    }
+}
+
+/* Extra small screens */
+@media (max-width: 400px) {
+    .converter-card,
+    .result-card {
+        padding: 6px 1vw;
+    }
+    .features h2 {
+        font-size: 16px;
+    }
+    .feature-card h3 {
+        font-size: 15px;
+    }
+    .feature-card p {
+        font-size: 12px;
+    }
+    .footer-logo {
+        font-size: 12px;
+    }
+    #audioEnhancerFab {
+        width: 36px;
+        height: 36px;
+        font-size: 1rem;
+        right: 6px;
+        bottom: 6px;
     }
 }
 
@@ -653,17 +831,25 @@ nav ul li a:hover {
 }
 
 .option-details {
-    padding: 20px 0;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    padding: 25px;
+    background: var(--card-bg);
+    border-radius: 12px;
+    border: 1px solid var(--border-color);
+    margin-top: 15px;
 }
 
 .option-row {
     display: flex;
+    justify-content: space-between;
     align-items: center;
-    margin-bottom: 15px;
+    gap: 150px;
 }
 
 .option-row label {
-    width: 120px;
+    font-size: 1.1em;
     font-weight: 500;
 }
 
@@ -678,20 +864,58 @@ nav ul li a:hover {
 }
 
 .slider-container {
-    flex: 1;
     display: flex;
     align-items: center;
+    gap: 15px;
+    flex-grow: 1;
 }
 
-.slider-container input {
-    flex: 1;
-    margin-right: 10px;
-    accent-color: var(--primary-color);
+.slider-container input[type="range"] {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+    height: 6px;
+    border-radius: 3px;
+    outline: none;
+    padding: 0;
+}
+
+.slider-container input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: var(--primary-color);
+    cursor: pointer;
+    transition: all .15s ease-in-out;
+}
+
+.slider-container input[type="range"]::-webkit-slider-thumb:hover {
+    background: var(--primary-dark);
+    transform: scale(1.1);
+}
+
+.slider-container input[type="range"]::-moz-range-thumb {
+    width: 18px;
+    height: 18px;
+    border: 0;
+    border-radius: 50%;
+    background: var(--primary-color);
+    cursor: pointer;
+    transition: all .15s ease-in-out;
+}
+
+.slider-container input[type="range"]::-moz-range-thumb:hover {
+    background: var(--primary-dark);
+    transform: scale(1.1);
 }
 
 .slider-container span {
-    width: 30px;
+    min-width: 30px;
     text-align: center;
+    font-weight: 500;
+    color: var(--text-primary);
 }
 
 /* Progress Container Styles */
@@ -860,17 +1084,18 @@ nav ul li a:hover {
 }
 
 .visualizer-container {
-    width: 100%;
-    height: 100px;
-    margin-bottom: 10px;
-    background-color: rgba(0, 0, 0, 0.05);
-    border-radius: 10px;
-    overflow: hidden;
+    background: linear-gradient(180deg, rgba(0,0,0,0.05) 0%, rgba(0,0,0,0.1) 100%);
+    border-radius: 12px;
+    padding: 15px;
+    margin-bottom: 20px;
+    box-shadow: inset 0 2px 4px rgba(0,0,0,0.05);
 }
 
 #audioVisualizer {
     width: 100%;
     height: 100%;
+    border-radius: 8px;
+    background: rgba(0,0,0,0.02);
 }
 
 .audio-player audio {
@@ -2045,4 +2270,89 @@ nav ul li a:hover {
 
 [data-theme="dark"] .batch-item:hover {
     background-color: var(--bg-secondary-dark);
+}
+
+#audioEnhancerFab {
+    position: fixed;
+    right: 32px;
+    bottom: 32px;
+    width: 56px;
+    height: 56px;
+    background: var(--primary-color, #4a6cf7);
+    color: #fff;
+    border-radius: 50%;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.18);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2rem;
+    z-index: 1000;
+    transition: background 0.2s, box-shadow 0.2s;
+    text-decoration: none;
+}
+#audioEnhancerFab:hover {
+    background: var(--primary-hover, #3651b3);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.22);
+    color: #fff;
+}
+
+/* --- Audio Enhancer Mobile Styles --- */
+@media (max-width: 600px) {
+    .conversion-options h3 {
+        font-size: 18px;
+        margin-bottom: 12px;
+    }
+    .option-details {
+        padding: 10px 2vw;
+        gap: 14px;
+    }
+    .option-row {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+        margin-bottom: 10px;
+    }
+    .option-row label {
+        font-size: 1em;
+        margin-bottom: 2px;
+    }
+    .slider-container {
+        width: 100%;
+        gap: 8px;
+    }
+    .slider-container input[type="range"] {
+        width: 90vw;
+        max-width: 100%;
+    }
+    .slider-container span {
+        min-width: 24px;
+        font-size: 1em;
+    }
+    #bassTrebleValue {
+        font-size: 1em;
+    }
+    .switch {
+        width: 48px;
+        height: 26px;
+    }
+    .slider:before {
+        height: 18px;
+        width: 18px;
+        left: 4px;
+        bottom: 4px;
+    }
+}
+
+/* Extra small screens for enhancer */
+@media (max-width: 400px) {
+    .option-details {
+        padding: 6px 1vw;
+        gap: 8px;
+    }
+    .option-row label {
+        font-size: 0.95em;
+    }
+    .slider-container input[type="range"] {
+        width: 80vw;
+    }
 }
