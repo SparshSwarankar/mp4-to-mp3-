@@ -1,14 +1,77 @@
-<!-- ...your HTML code... -->
 <!DOCTYPE html>
 <html lang="en">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SoundShift - MP4 to MP3 Converter</title>
+    <title>Audio Trimmer - SoundShift</title>
     <link rel="stylesheet" href="/static/styles.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="shortcut icon" href="/static/icons8-sound-3d-fluency-96.png" type="image/x-icon">
+    <style>
+        /* Audio Trimmer specific styles */
+        .option-details .option-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 24px;
+            margin-bottom: 10px;
+        }
+
+        .option-details .option-row label {
+            min-width: 160px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .option-details .option-row input[type="number"] {
+            width: 100px;
+            padding: 8px 10px;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            font-size: 15px;
+            background: var(--card-bg);
+            color: var(--text-primary);
+            transition: border 0.2s;
+        }
+
+        .option-details .option-row input[type="number"]:focus {
+            border-color: var(--primary-color);
+            outline: none;
+        }
+
+        .option-details .option-row input[type="range"] {
+            flex: 1;
+            margin-left: 12px;
+            accent-color: var(--primary-color);
+            height: 4px;
+        }
+
+        @media (max-width: 700px) {
+            .option-details .option-row {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 8px;
+            }
+
+            .option-details .option-row label {
+                min-width: 0;
+                font-size: 1em;
+            }
+
+            .option-details .option-row input[type="number"] {
+                width: 100%;
+                max-width: 180px;
+            }
+
+            .option-details .option-row input[type="range"] {
+                width: 100%;
+                margin-left: 0;
+            }
+        }
+    </style>
 </head>
 
 <body>
@@ -17,11 +80,10 @@
             <nav>
                 <div class="logo">SoundShift</div>
                 <ul>
-                    <li><a href="/" class="active"><i class="fas fa-home"></i> Home</a></li>
+                    <li><a href="/"><i class="fas fa-home"></i> Home</a></li>
                     <li><a href="/about"><i class="fas fa-info-circle"></i> About</a></li>
                     <li><a href="/tools"><i class="fas fa-toolbox"></i> Tools</a></li>
                     <li><a href="/contact"><i class="fas fa-envelope"></i> Contact</a></li>
-
                 </ul>
                 <div class="theme-toggle" id="themeToggleContainer">
                     <i class="fas fa-sun"></i>
@@ -37,8 +99,8 @@
         <main>
             <section class="hero">
                 <div class="hero-content">
-                    <h1>Convert MP4 to MP3</h1>
-                    <p>Transform your videos into high-quality audio files</p>
+                    <h1>Audio Trimmer</h1>
+                    <p>Trim your audio files to the perfect length</p>
                     <div class="wave-animation">
                         <div class="wave"></div>
                         <div class="wave"></div>
@@ -53,41 +115,36 @@
 
             <section class="converter">
                 <div class="converter-card">
-                    <div class="batch-toggle" id="batchToggleContainer">
-                        <span class="batch-label single active" id="singleLabel">Single File</span>
-                        <label class="switch" aria-label="Toggle batch mode">
-                            <input type="checkbox" id="batchToggle" aria-checked="false" />
-                            <span class="slider round"></span>
-                        </label>
-                        <span class="batch-label batch" id="batchLabel">Batch Mode</span>
-                    </div>
-
                     <div class="upload-area" id="dropZone">
                         <i class="fas fa-cloud-upload-alt"></i>
-                        <h3 id="uploadTitle">Drag & Drop your MP4 file here</h3>
+                        <h3 id="uploadTitle">Drag & Drop your audio file here</h3>
                         <p>or</p>
                         <label for="fileInput" class="upload-btn">Browse Files</label>
-                        <input type="file" id="fileInput" accept="video/mp4" hidden multiple>
+                        <input type="file" id="fileInput" accept="audio/mp3,audio/wav,audio/mpeg" hidden>
                         <p class="file-info" id="fileInfo">Maximum file size: 500MB</p>
                         <div id="fileList" class="file-list"></div>
                     </div>
 
                     <div class="conversion-options">
-                        <h3>Conversion Options</h3>
-                        <div class="option-tabs">
-                            <button class="option-tab active" data-option="normal">Normal MP3</button>
-                        </div>
-
-                        <div class="option-details" id="normalOptions">
+                        <h3>Trim Options</h3>
+                        <div class="option-details">
                             <div class="option-row">
-                                <label>Quality</label>
-                                <select id="quality">
-                                    <option value="320">High (320 kbps)</option>
-                                    <option value="256">Medium (256 kbps)</option>
-                                    <option value="128">Low (128 kbps)</option>
-                                </select>
+                                <label for="startTime"><i class="fas fa-play"></i> Start Time (seconds)</label>
+                                <input type="number" id="startTime" min="0" value="0" step="0.1" style="width:100px;">
+                            </div>
+                            <div class="option-row">
+                                <label for="endTime"><i class="fas fa-stop"></i> End Time (seconds)</label>
+                                <input type="number" id="endTime" min="0" value="0" step="0.1" style="width:100px;">
+                            </div>
+                            <div class="option-row">
+                                <label for="rangeSlider"><i class="fas fa-arrows-alt-h"></i> Select Range</label>
+                                <input type="range" id="rangeSlider" min="0" max="100" value="0" step="0.1" style="width:100%;">
                             </div>
                         </div>
+                    </div>
+
+                    <div class="audio-player" style="margin-bottom:20px;">
+                        <audio id="audioPreview" controls style="width:100%;"></audio>
                     </div>
 
                     <div class="progress-container" id="progressContainer" style="display: none;">
@@ -100,85 +157,39 @@
                                 <div class="progress-glow"></div>
                             </div>
                         </div>
-                        <div class="progress-details">
-                            <div class="progress-detail">
-                                <span class="detail-label">File:</span>
-                                <span id="currentFile">-</span>
-                            </div>
-                            <div class="progress-detail">
-                                <span class="detail-label">Speed:</span>
-                                <span id="uploadSpeed">0 KB/s</span>
-                            </div>
-                            <div class="progress-detail">
-                                <span class="detail-label">Uploaded:</span>
-                                <span id="uploadedSize">0 KB</span>
-                            </div>
-                            <div class="progress-detail">
-                                <span class="detail-label">Remaining:</span>
-                                <span id="timeRemaining">Calculating...</span>
-                            </div>
-                        </div>
-                        <div id="conversionStatus" class="conversion-status"></div>
                     </div>
 
-                    <button id="convertBtn" class="convert-btn" disabled>Convert Now</button>
-                </div>
-            </section>
-
-            <section class="result-section" id="resultSection" style="display: none;">
-                <div class="result-card">
-                    <div class="success-icon">
-                        <i class="fas fa-check-circle"></i>
-                    </div>
-                    <h3>Conversion Complete!</h3>
-                    <p id="resultMessage">Your MP3 file is ready to download</p>
-
-                    <div class="audio-player">
-                        <div class="visualizer-container">
-                            <canvas id="audioVisualizer" width="300" height="60"></canvas>
-                        </div>
-                        <audio id="audioPreview" controls></audio>
-                    </div>
-
-                    <div id="singleFileResult">
-                        <button id="downloadBtn" class="download-btn">
-                            <i class="fas fa-download"></i> Download MP3
-                        </button>
-                    </div>
-
-                    <div id="batchFileResult" style="display: none;">
-                        <button id="downloadAllBtn" class="download-btn">
-                            <i class="fas fa-download"></i> Download All (ZIP)
-                        </button>
-                        <div id="batchDownloadList" class="batch-download-list"></div>
-                    </div>
+                    <button id="trimBtn" class="convert-btn" disabled>Trim Audio</button>
+                    <button id="downloadBtn" class="download-btn" style="display:none;margin-top:12px;">
+                        <i class="fas fa-download"></i> Download Trimmed Audio
+                    </button>
                 </div>
             </section>
         </main>
 
         <section class="features">
-            <h2>Why Choose Our Converter</h2>
+            <h2>Why Use Our Audio Trimmer</h2>
             <div class="features-grid">
                 <div class="feature-card">
                     <div class="feature-icon">
-                        <i class="fas fa-bolt"></i>
+                        <i class="fas fa-cut"></i>
                     </div>
-                    <h3>Fast Conversion</h3>
-                    <p>Convert your files in seconds with our optimized algorithm</p>
+                    <h3>Precise Trimming</h3>
+                    <p>Set exact start and end times for your audio clips.</p>
                 </div>
                 <div class="feature-card">
                     <div class="feature-icon">
-                        <i class="fas fa-shield-alt"></i>
+                        <i class="fas fa-headphones"></i>
                     </div>
-                    <h3>Secure Processing</h3>
-                    <p>Your files are processed securely and never stored on our servers</p>
+                    <h3>Instant Preview</h3>
+                    <p>Listen to your trimmed selection before downloading.</p>
                 </div>
                 <div class="feature-card">
                     <div class="feature-icon">
-                        <i class="fas fa-layer-group"></i>
+                        <i class="fas fa-download"></i>
                     </div>
-                    <h3>Batch Conversion</h3>
-                    <p>Convert multiple files at once to save time</p>
+                    <h3>Easy Download</h3>
+                    <p>Get your trimmed audio in seconds, no watermark.</p>
                 </div>
             </div>
         </section>
@@ -366,47 +377,10 @@
                     soon as possible.</p>
             </div>
         </div>
-
     </div>
 
+    <script src="/static/audio_trimmer.js"></script>
     <script src="/static/updated_script.js"></script>
-    <script>
-        function openPopup(id) {
-            document.getElementById(id).style.display = "block";
-        }
-
-        function closePopup(id) {
-            document.getElementById(id).style.display = "none";
-        }
-
-        window.onclick = function (event) {
-            const popups = document.querySelectorAll('.popup');
-            popups.forEach(popup => {
-                if (event.target === popup) {
-                    popup.style.display = "none";
-                }
-            });
-        };
-    </script>
-
-    <!-- Floating Audio Enhancer Button -->
-    <a href="/audio-enhancer" id="audioEnhancerFab" title="Audio Enhancer Tool">
-        <i class="fas fa-wand-magic-sparkles"></i>
-    </a>
-    <a href="/audio-trimmer" id="audioTrimmerFab" title="Audio Trimmer Tool">
-        <i class="fas fa-sliders-h"></i>
-    </a>
-
-    <!-- Custom Error Modal -->
-    <div id="customErrorModal" style="display: none;">
-        <div class="custom-modal-overlay"></div>
-        <div class="custom-modal-content">
-            <div class="custom-modal-icon"><i class="fas fa-exclamation-circle"></i></div>
-            <div class="custom-modal-title">Error</div>
-            <div class="custom-modal-message"></div>
-            <button class="custom-modal-close">Close</button>
-        </div>
-    </div>
 </body>
 
 </html>

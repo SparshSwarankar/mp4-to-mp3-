@@ -1731,14 +1731,6 @@ input:checked + .slider:before {
     }
 }
 
-.conversion-status {
-    margin-top: 10px;
-    font-size: 16px;
-    color: var(--primary-color);
-    min-height: 24px;
-    text-align: center;
-    transition: color 0.3s;
-}
 
 /* Modal Styles */
 .custom-modal-overlay {
@@ -2272,6 +2264,7 @@ input:checked + .slider:before {
     background-color: var(--bg-secondary-dark);
 }
 
+/* --- Floating Audio Enhancer & Trimmer Buttons --- */
 #audioEnhancerFab {
     position: fixed;
     right: 32px;
@@ -2296,63 +2289,61 @@ input:checked + .slider:before {
     color: #fff;
 }
 
-/* --- Audio Enhancer Mobile Styles --- */
-@media (max-width: 600px) {
-    .conversion-options h3 {
-        font-size: 18px;
-        margin-bottom: 12px;
-    }
-    .option-details {
-        padding: 10px 2vw;
-        gap: 14px;
-    }
-    .option-row {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 8px;
-        margin-bottom: 10px;
-    }
-    .option-row label {
-        font-size: 1em;
-        margin-bottom: 2px;
-    }
-    .slider-container {
-        width: 100%;
-        gap: 8px;
-    }
-    .slider-container input[type="range"] {
-        width: 90vw;
-        max-width: 100%;
-    }
-    .slider-container span {
-        min-width: 24px;
-        font-size: 1em;
-    }
-    #bassTrebleValue {
-        font-size: 1em;
-    }
-    .switch {
-        width: 48px;
-        height: 26px;
-    }
-    .slider:before {
-        height: 18px;
-        width: 18px;
-        left: 4px;
-        bottom: 4px;
-    }
+/* For the second floating button (Audio Trimmer), use a different id or style for right offset */
+#audioTrimmerFab {
+    position: fixed;
+    right: 100px;
+    bottom: 32px;
+    width: 56px;
+    height: 56px;
+    background: var(--primary-color, #4a6cf7);
+    color: #fff;
+    border-radius: 50%;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.18);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2rem;
+    z-index: 1000;
+    transition: background 0.2s, box-shadow 0.2s;
+    text-decoration: none;
+}
+#audioTrimmerFab:hover {
+    background: var(--primary-hover, #3651b3);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.22);
+    color: #fff;
 }
 
-/* Extra small screens for enhancer */
+/* --- Mobile adjustments for floating buttons --- */
+@media (max-width: 600px) {
+    #audioEnhancerFab {
+        right: 12px;
+        bottom: 12px;
+        width: 44px;
+        height: 44px;
+        font-size: 1.3rem;
+    }
+    #audioTrimmerFab {
+        right: 68px;
+        bottom: 12px;
+        width: 44px;
+        height: 44px;
+        font-size: 1.3rem;
+    }
+}
 @media (max-width: 400px) {
-    .option-details {
-        padding: 6px 1vw;
-        gap: 8px;
+    #audioEnhancerFab {
+        width: 36px;
+        height: 36px;
+        font-size: 1rem;
+        right: 6px;
+        bottom: 6px;
     }
-    .option-row label {
-        font-size: 0.95em;
-    }
-    .slider-container input[type="range"] {
-        width: 80vw;
+    #audioTrimmerFab {
+        width: 36px;
+        height: 36px;
+        font-size: 1rem;
+        right: 48px;
+        bottom: 6px;
     }
 }

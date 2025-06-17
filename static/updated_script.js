@@ -283,11 +283,29 @@ document.addEventListener('DOMContentLoaded', function () {
 
     function validateFile(file, showAlert = true) {
         // This function is for video conversion. A separate function `validateAudioFile` is for audio enhancement.
+        // --- UPDATE: For audio trimmer, only allow MP3 files ---
+        if (window.location.pathname === '/audio-trimmer') {
+            if (file.type !== 'audio/mp3' && file.type !== 'audio/mpeg') {
+                if (showAlert) {
+                    showCustomErrorModal('file', 'Only MP3 files are allowed.');
+                }
+                return false;
+            }
+            if (file.size > 500 * 1024 * 1024) {
+                if (showAlert) {
+                    showCustomErrorModal('file', 'File exceeds 500MB limit.');
+                }
+                return false;
+            }
+            return true;
+        }
+        // ...existing logic for other tools...
         if (file.type !== 'video/mp4') {
             if (showAlert) {
                 showCustomErrorModal('file', 'Only MP4 files are allowed.');
             }
             return false;
+        
         }
         if (file.size > 200 * 1024 * 1024) {
             if (showAlert) {
@@ -671,7 +689,6 @@ document.addEventListener('DOMContentLoaded', function () {
     // --- Audio preview logic for enhancer: REMOVE preview and visualizer ---
     function showAudioResult() {
         if (resultSection) resultSection.style.display = 'block';
-        // Do NOT set audioPreview.src or show audioPreview for enhancer
         setDownloadBtnHandler();
     }
 
@@ -864,6 +881,7 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     function drawVisualizer() {
+        if (!audioVisualizer || !canvasCtx) return; // Prevent error if not present
         analyser.getByteFrequencyData(dataArray);
         canvasCtx.clearRect(0, 0, audioVisualizer.width, audioVisualizer.height);
 

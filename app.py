@@ -389,5 +389,91 @@ def enhance_audio():
         print("Enhance error:", str(e))  # Log the error for debugging
         return jsonify({'error': str(e)}), 500
 
+@app.route('/trim-audio', methods=['POST'])
+def trim_audio():
+    if 'file' not in request.files:
+        return jsonify({'error': 'No file provided'}), 400
+    file = request.files['file']
+    if file.filename == '':
+        return jsonify({'error': 'No file selected'}), 400
+
+    # Only allow MP3 files
+    if not (file.filename.lower().endswith('.mp3') or file.mimetype in ['audio/mp3', 'audio/mpeg']):
+        return jsonify({'error': 'Only MP3 files are allowed.'}), 400
+
+    start = request.form.get('start', '0')
+    end = request.form.get('end', None)
+    if end is None:
+        return jsonify({'error': 'End time required'}), 400
+
+    try:
+        start_float = float(start)
+        end_float = float(end)
+        if end_float <= start_float:
+            return jsonify({'error': 'End time must be greater than start time.'}), 400
+        if end_float - start_float < 0.1:
+            return jsonify({'error': 'Trim duration too short. Please select a longer range.'}), 400
+    except Exception as e:
+        return jsonify({'error': f'Invalid start/end time: {e}'}), 400
+
+    filename = secure_filename(file.filename)
+    input_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+    file.save(input_path)
+
+    output_filename = f"trimmed_{filename.rsplit('.', 1)[0]}.mp3"
+    output_path = os.path.join(app.config['CONVERTED_FOLDER'], output_filename)
+
+    try:
+
+        ffmpeg_cmd = [
+            'ffmpeg', '-y',
+            '-ss', str(start), '-to', str(end),
+            '-accurate_seek', '-avoid_negative_ts', '1',
+            '-i', input_path,
+            '-acodec', 'libmp3lame', '-ab', '192k',
+            output_path
+        ]
+        # print("Running FFmpeg command:", " ".join(ffmpeg_cmd))
+        result = subprocess.run(ffmpeg_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        if result.returncode != 0:
+            error_msg = result.stderr.decode()
+            # print("FFmpeg error:", error_msg)
+            return jsonify({'error': f"FFmpeg failed: {error_msg}"}), 500
+
+        # Ensure file is closed before attempting to delete it in finally
+        with open(output_path, 'rb') as f:
+            data = f.read()
+
+        response = send_file(
+            BytesIO(data),
+            as_attachment=True,
+            download_name=output_filename,
+            mimetype='audio/mpeg'
+        )
+        return response
+
+    except Exception as e:
+        # print("Trim error:", str(e))
+        return jsonify({'error': str(e)}), 500
+    finally:
+        import time
+        time.sleep(0.1)
+        try:
+            if os.path.exists(input_path):
+                os.remove(input_path)
+        except Exception as e:
+            # print(f"Could not remove input file: {e}")
+            pass
+        try:
+            if os.path.exists(output_path):
+                os.remove(output_path)
+        except Exception as e:
+            # print(f"Could not remove output file: {e}")
+            pass
+
+@app.route('/audio-trimmer')
+def audio_trimmer():
+    return render_template('audio_trimmer.html')
+
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000,debug=True)
