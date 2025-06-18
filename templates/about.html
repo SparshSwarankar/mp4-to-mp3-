@@ -127,7 +127,8 @@
                             <ul>
                                 <li><a href="/tools" target="_blank">MP4 to MP3</a></li>
                                 <li><a href="/tools" target="_blank">Audio Enhancer</a></li>
-                                <li><a href="https://free2formate.up.railway.app" target="_blank">Video Converter</a></li>
+                                <li><a href="https://free2formate.up.railway.app" target="_blank">Video Converter</a>
+                                </li>
                                 <li><a href="/tools" target="_blank">Audio Trimmer</a></li>
                             </ul>
                         </div>
@@ -308,20 +309,26 @@
     <script>
         function openPopup(id) {
             document.getElementById(id).style.display = "block";
+            document.body.style.overflow = "hidden";
         }
 
         function closePopup(id) {
             document.getElementById(id).style.display = "none";
+            document.body.style.overflow = "";
         }
 
-        window.onclick = function (event) {
+        // Support both click and touch for closing popups when tapping outside
+        function handlePopupClose(event) {
             const popups = document.querySelectorAll('.popup');
             popups.forEach(popup => {
                 if (event.target === popup) {
                     popup.style.display = "none";
+                    document.body.style.overflow = "";
                 }
             });
-        };
+        }
+        window.addEventListener('click', handlePopupClose);
+        window.addEventListener('touchstart', handlePopupClose);
     </script>
 </body>
 

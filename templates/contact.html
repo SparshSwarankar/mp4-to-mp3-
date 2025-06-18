@@ -253,32 +253,38 @@
     <script>
         function openPopup(id) {
             document.getElementById(id).style.display = "block";
+            document.body.style.overflow = "hidden";
         }
 
         function closePopup(id) {
             document.getElementById(id).style.display = "none";
+            document.body.style.overflow = "";
         }
 
-        window.onclick = function (event) {
+        // Support both click and touch for closing popups when tapping outside
+        function handlePopupClose(event) {
             const popups = document.querySelectorAll('.popup');
             popups.forEach(popup => {
                 if (event.target === popup) {
                     popup.style.display = "none";
+                    document.body.style.overflow = "";
                 }
             });
-        };
+        }
+        window.addEventListener('click', handlePopupClose);
+        window.addEventListener('touchstart', handlePopupClose);
 
-        document.getElementById('contactForm').addEventListener('submit', function(e) {
+        document.getElementById('contactForm').addEventListener('submit', function (e) {
             e.preventDefault();
-            
+
             const submitBtn = document.querySelector('.convert-btn');
             const statusDiv = document.getElementById('contactStatus');
-            
+
             // Disable button and show loading state
             submitBtn.disabled = true;
             submitBtn.innerHTML = 'Sending...';
             statusDiv.innerHTML = '';
-            
+
             const formData = {
                 name: document.getElementById('name').value,
                 email: document.getElementById('email').value,
@@ -286,7 +292,7 @@
             };
 
             const scriptURL = "https://script.google.com/macros/s/AKfycbyt6t586Rf7SSrF1eUBKlhlReKw1aMY0EKBYLn63ZSaAP_ap4U38tlEwEAJkLyTp602/exec";
-            
+
             // Convert formData to URL parameters and send in body
             fetch(scriptURL, {
                 method: 'POST',
@@ -296,21 +302,21 @@
                 },
                 body: new URLSearchParams(formData)
             })
-            .then(() => {
-                // Since we're using no-cors, we can't read the response
-                // But we can assume success if the request completes
-                statusDiv.innerHTML = '<div style="color: green; margin-top: 10px;">Message sent successfully! We\'ll get back to you soon.</div>';
-                document.getElementById('contactForm').reset();
-            })
-            .catch(error => {
-                statusDiv.innerHTML = '<div style="color: red; margin-top: 10px;">Error sending message. Please try again.</div>';
-                console.error('Error:', error);
-            })
-            .finally(() => {
-                // Re-enable button and restore text
-                submitBtn.disabled = false;
-                submitBtn.innerHTML = 'Send Message';
-            });
+                .then(() => {
+                    // Since we're using no-cors, we can't read the response
+                    // But we can assume success if the request completes
+                    statusDiv.innerHTML = '<div style="color: green; margin-top: 10px;">Message sent successfully! We\'ll get back to you soon.</div>';
+                    document.getElementById('contactForm').reset();
+                })
+                .catch(error => {
+                    statusDiv.innerHTML = '<div style="color: red; margin-top: 10px;">Error sending message. Please try again.</div>';
+                    console.error('Error:', error);
+                })
+                .finally(() => {
+                    // Re-enable button and restore text
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = 'Send Message';
+                });
         });
     </script>
 
