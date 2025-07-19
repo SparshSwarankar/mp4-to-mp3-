@@ -92,10 +92,10 @@ def convert():
         resp.headers['Access-Control-Allow-Origin'] = '*'
         return resp, 400
 
-    # Validate all files
+    # Validate all files (allow MP4 and MKV)
     for file in files:
-        if not file.filename.lower().endswith('.mp4'):
-            resp = jsonify({'error': 'Only MP4 files are allowed'})
+        if not (file.filename.lower().endswith('.mp4') or file.filename.lower().endswith('.mkv')):
+            resp = jsonify({'error': 'Only MP4 and MKV files are allowed'})
             resp.headers['Access-Control-Allow-Origin'] = '*'
             return resp, 400
 
@@ -106,20 +106,20 @@ def convert():
         # Save uploaded files
         for file in files:
             filename = secure_filename(file.filename)
-            mp4_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-            file.save(mp4_path)
-            uploaded_files.append(mp4_path)
+            input_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+            file.save(input_path)
+            uploaded_files.append(input_path)
             
             print("\n" + "="*50)
             print("File Upload Details:")
             print("="*50)
             print(f"File Name: {filename}")
-            print(f"Upload Path: {mp4_path}")
-            print(f"Size: {os.path.getsize(mp4_path)/1024:.2f} KB")
+            print(f"Upload Path: {input_path}")
+            print(f"Size: {os.path.getsize(input_path)/1024:.2f} KB")
             print(f"Upload Time: {datetime.datetime.now()}")
             print("="*50 + "\n")
             
-            # Convert the file
+            # Convert the file (support both MP4 and MKV as input)
             mp3_filename = filename.rsplit('.', 1)[0] + '.mp3'
             mp3_path = os.path.join(app.config['CONVERTED_FOLDER'], mp3_filename)
             
@@ -127,7 +127,7 @@ def convert():
                 result = subprocess.run(
                     [
                         'ffmpeg', '-y', '-loglevel', 'error', 
-                        '-i', mp4_path, 
+                        '-i', input_path, 
                         '-vn', '-acodec', 'libmp3lame', 
                         '-ab', '192k', 
                         mp3_path
@@ -141,7 +141,7 @@ def convert():
                 print("="*50)
                 print(f"Input File: {filename}")
                 print(f"Status: {'Success' if result.returncode == 0 else 'Failed'}")
-                print(f"Input Path: {mp4_path}")
+                print(f"Input Path: {input_path}")
                 print(f"Output Path: {mp3_path}")
                 print(f"Return Code: {result.returncode}")
                 if result.stderr:
@@ -154,7 +154,6 @@ def convert():
                 else:
                     logger.error(f"Conversion failed for {filename}")
                     print(f"Failed: {filename}, stderr={result.stderr.decode()}")
-            
             except Exception as e:
                 logger.error(f"Exception during conversion of {filename}: {e}")
                 print(f"Exception for {filename}: {e}")
@@ -476,4 +475,12 @@ def audio_trimmer():
     return render_template('audio_trimmer.html')
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000,debug=True)
+    import signal
+    import sys
+
+    def handle_sigint(sig, frame):
+        print("\nGracefully shutting down server...")
+        sys.exit(0)
+
+    signal.signal(signal.SIGINT, handle_sigint)
+    app.run(host='0.0.0.0', port=5000, debug=True)

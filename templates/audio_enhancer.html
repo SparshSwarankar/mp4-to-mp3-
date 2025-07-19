@@ -132,6 +132,13 @@
                     <h3>Enhancement Complete!</h3>
                     <p id="resultMessage">Your enhanced audio file is ready to download</p>
 
+                    <div class="audio-player">
+                        <div class="visualizer-container">
+                            <canvas id="audioVisualizer" width="300" height="60"></canvas>
+                        </div>
+                        <audio id="audioPreview" controls></audio>
+                    </div>
+
                     <button id="downloadBtn" class="download-btn">
                         <i class="fas fa-download"></i> Download Enhanced Audio
                     </button>
@@ -352,30 +359,6 @@
     </div>
 
     <script src="/static/updated_script.js"></script>
-    <script>
-        function openPopup(id) {
-            document.getElementById(id).style.display = "block";
-            document.body.style.overflow = "hidden";
-        }
-
-        function closePopup(id) {
-            document.getElementById(id).style.display = "none";
-            document.body.style.overflow = "";
-        }
-
-        // Support both click and touch for closing popups when tapping outside
-        function handlePopupClose(event) {
-            const popups = document.querySelectorAll('.popup');
-            popups.forEach(popup => {
-                if (event.target === popup) {
-                    popup.style.display = "none";
-                    document.body.style.overflow = "";
-                }
-            });
-        }
-        window.addEventListener('click', handlePopupClose);
-        window.addEventListener('touchstart', handlePopupClose);
-    </script>
 </body>
 
 </html>
