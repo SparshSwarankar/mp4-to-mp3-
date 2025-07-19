@@ -24,17 +24,6 @@ document.addEventListener('DOMContentLoaded', function () {
     const audioVisualizer = document.getElementById('audioVisualizer');
     const conversionStatus = document.getElementById('conversionStatus');
 
-    // Audio Enhancer specific elements
-    const enhanceBtn = document.getElementById('enhanceBtn');
-    const bassTrebleSlider = document.getElementById('bassTreble');
-    const bassTrebleValue = document.getElementById('bassTrebleValue');
-    const progressStatus = document.getElementById('progressStatus'); // Added for audio progress
-    const progressPercentage = document.getElementById('progressPercentage'); // Added for audio progress
-    const currentFile = document.getElementById('currentFile'); // Added for audio progress
-    const uploadSpeed = document.getElementById('uploadSpeed'); // Added for audio progress
-    const uploadedSize = document.getElementById('uploadedSize'); // Added for audio progress
-    const timeRemaining = document.getElementById('timeRemaining'); // Added for audio progress
-
     // === Variables ===
     let selectedFiles = [];
     let convertedFiles = [];
@@ -42,11 +31,6 @@ document.addEventListener('DOMContentLoaded', function () {
     let isBatchMode = false;
     let audioContext, analyser, dataArray;
     let canvasCtx = audioVisualizer ? audioVisualizer.getContext('2d') : null;
-
-    // Audio Enhancer specific state variables
-    let selectedAudioFile = null; // For audio enhancement
-    let enhancedAudioFile = null; // For audio enhancement
-    let audioStartTime = 0; // For audio enhancement progress tracking
 
     // === Theme Initialization (WORKS ON ALL PAGES) ===
     function initializeTheme() {
@@ -162,12 +146,8 @@ document.addEventListener('DOMContentLoaded', function () {
         dropZone.addEventListener('drop', e => {
             e.preventDefault();
             dropZone.classList.remove('active');
-            // Distinguish between video and audio drop based on the page context
-            if (window.location.pathname === '/audio-enhancer') {
-                handleAudioFile(e.dataTransfer.files[0]);
-            } else {
-                isBatchMode ? processMultipleFiles(e.dataTransfer.files) : processFile(e.dataTransfer.files[0]);
-            }
+            // Only handle MP4/MKV for main converter
+            isBatchMode ? processMultipleFiles(e.dataTransfer.files) : processFile(e.dataTransfer.files[0]);
         });
 
         dropZone.addEventListener('click', (e) => {
@@ -181,12 +161,8 @@ document.addEventListener('DOMContentLoaded', function () {
     if (fileInput) {
         fileInput.addEventListener('click', (e) => e.stopPropagation());
         fileInput.addEventListener('change', e => {
-            // Distinguish between video and audio file input based on the page context
-            if (window.location.pathname === '/audio-enhancer') {
-                handleAudioFile(e.target.files[0]);
-            } else {
-                isBatchMode ? processMultipleFiles(e.target.files) : processFile(e.target.files[0]);
-            }
+            // Only handle MP4/MKV for main converter
+            isBatchMode ? processMultipleFiles(e.target.files) : processFile(e.target.files[0]);
         });
     }
 
@@ -218,14 +194,6 @@ document.addEventListener('DOMContentLoaded', function () {
             if (normalOptions) normalOptions.style.display = 'block';
         });
     });
-
-    // Audio Enhancer specific event listeners
-    if (enhanceBtn) enhanceBtn.addEventListener('click', handleAudioEnhancement);
-    if (bassTrebleSlider) {
-        bassTrebleSlider.addEventListener('input', updateBassTrebleSlider);
-        // Initialize slider background on load if it exists
-        updateBassTrebleSlider();
-    }
 
     // === Custom Error Modals ===
     function showCustomErrorModal(type, message) {
@@ -298,9 +266,11 @@ document.addEventListener('DOMContentLoaded', function () {
             }
             return false;
         }
-        if (file.size > 200 * 1024 * 1024) {
+        // Use 100MB limit for hosted version
+        const maxSize = (window.location.hostname.includes('render') || window.location.hostname.includes('onrender')) ? 100 * 1024 * 1024 : 200 * 1024 * 1024;
+        if (file.size > maxSize) {
             if (showAlert) {
-                showCustomErrorModal('file', 'File exceeds 200MB limit.');
+                showCustomErrorModal('file', 'File exceeds the maximum allowed size for online conversion (100MB).');
             }
             return false;
         }
@@ -839,158 +809,6 @@ document.addEventListener('DOMContentLoaded', function () {
             contactForm.reset();
         });
     }
-
-    // Audio Enhancer specific functions
-    function updateBassTrebleSlider() {
-        if (!bassTrebleSlider || !bassTrebleValue) return;
-
-        const value = bassTrebleSlider.value;
-        const min = bassTrebleSlider.min;
-        const max = bassTrebleSlider.max;
-        const percentage = ((value - min) / (max - min)) * 100;
-
-        bassTrebleValue.textContent = value;
-        bassTrebleSlider.style.background = `linear-gradient(to right, var(--primary-color) ${percentage}%, var(--border-color) ${percentage}%)`;
-    }
-
-    function handleAudioFile(file) {
-        if (!validateAudioFile(file)) return;
-
-        selectedAudioFile = file;
-        if (fileInfo) fileInfo.textContent = `Selected: ${file.name} (${formatFileSize(file.size)})`;
-        if (fileInfo) fileInfo.style.color = 'var(--text-secondary)';
-        if (enhanceBtn) enhanceBtn.disabled = false;
-    }
-
-    function validateAudioFile(file) {
-        console.log("File type being validated:", file.type);
-        const validTypes = ['audio/mp3', 'audio/wav', 'audio/mpeg'];
-        if (!validTypes.includes(file.type)) {
-            showCustomErrorModal('file', 'Only MP3 and WAV files are allowed.');
-            return false;
-        }
-        if (file.size > 500 * 1024 * 1024) {
-            showCustomErrorModal('file', 'File exceeds 500MB limit.');
-            return false;
-        }
-        return true;
-    }
-
-    async function handleAudioEnhancement() {
-        if (!selectedAudioFile) return;
-
-        if (enhanceBtn) {
-            enhanceBtn.disabled = true;
-            enhanceBtn.textContent = 'Enhancing...';
-        }
-        if (progressContainer) progressContainer.style.display = 'block';
-        if (progressBar) progressBar.style.width = '0%';
-        audioStartTime = Date.now();
-
-        const formData = new FormData();
-        formData.append('file', selectedAudioFile);
-        formData.append('volumeBoost', document.getElementById('volumeBoost').checked);
-        formData.append('noiseReduction', document.getElementById('noiseReduction').checked);
-        formData.append('bassTreble', bassTrebleSlider.value);
-
-        try {
-            const response = await uploadFileWithProgress(selectedAudioFile, '/enhance', formData, true);
-
-            if (!response.ok) throw new Error('Enhancement failed');
-
-            const blob = await response.blob();
-            if (!blob || blob.size === 0) throw new Error('Empty response');
-
-            const filename = response.headers.get('Content-Disposition')?.match(/filename="?([^"]+)"?/)?.[1] || 'enhanced_audio.mp3';
-            enhancedAudioFile = { url: URL.createObjectURL(blob), filename };
-
-            if (progressStatus) progressStatus.textContent = 'Enhancement complete!';
-            if (progressBar) progressBar.style.width = '100%';
-            if (progressPercentage) progressPercentage.textContent = '100%';
-
-            showAudioResult();
-        } catch (error) {
-            showCustomErrorModal('enhancement', error.message || 'Enhancement failed. Please try again.');
-            resetAudioProgress();
-        }
-    }
-
-    function showAudioResult() {
-        if (resultSection) resultSection.style.display = 'block';
-        if (audioPreview) {
-            audioPreview.src = enhancedAudioFile.url;
-            audioPreview.load();
-            setupAudioVisualization(); // Re-use existing visualizer setup
-        }
-        // Ensure download button for audio is set
-        if (downloadBtn) {
-            downloadBtn.onclick = downloadEnhancedFile; // Assign specific download function for audio
-        }
-    }
-
-    function downloadEnhancedFile() {
-        if (!enhancedAudioFile) return;
-
-        const a = document.createElement('a');
-        a.href = enhancedAudioFile.url;
-        a.download = enhancedAudioFile.filename;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-    }
-
-    function resetAudioProgress() {
-        if (enhanceBtn) {
-            enhanceBtn.disabled = false;
-            enhanceBtn.textContent = 'Enhance Audio';
-        }
-        if (progressBar) progressBar.style.width = '0%';
-        if (progressContainer) progressContainer.style.display = 'none';
-        if (progressStatus) progressStatus.textContent = 'Preparing...';
-        if (progressPercentage) progressPercentage.textContent = '0%';
-        if (currentFile) currentFile.textContent = '-';
-        if (uploadSpeed) uploadSpeed.textContent = '0 KB/s';
-        if (uploadedSize) uploadedSize.textContent = '0 KB';
-        if (timeRemaining) timeRemaining.textContent = 'Calculating...';
-    }
-
-    function calculateTimeRemaining(loaded, total, startTime) {
-        const elapsed = (Date.now() - startTime) / 1000;
-        const speed = loaded / elapsed;
-        const remaining = (total - loaded) / speed;
-
-        if (remaining < 60) {
-            return Math.round(remaining) + 's';
-        } else if (remaining < 3600) {
-            return Math.round(remaining / 60) + 'm';
-        } else {
-            return Math.round(remaining / 3600) + 'h';
-        }
-    }
-
-    // Ensure the overall resetConverter also resets audio progress if applicable
-    const originalResetConverter = resetConverter; // Save original for chaining
-    resetConverter = function () {
-        originalResetConverter();
-        resetAudioProgress();
-        // Additional resets if needed based on audio context
-        if (audioPreview) audioPreview.src = '';
-        if (resultSection) resultSection.style.display = 'none';
-    };
-
-    // Ensure that audio visualizer uses audioContext and analyser when playing audio
-    // (This part is already in updated_script.js, ensure it works for audio as well)
-    // if (audioPreview) audioPreview.addEventListener('play', setupAudioVisualization);
-
-    // Modify downloadFile to handle both video and audio downloads
-    const originalDownloadFile = downloadFile; // Save original for chaining
-    downloadFile = function () {
-        if (window.location.pathname === '/audio-enhancer' && enhancedAudioFile) {
-            downloadEnhancedFile();
-        } else {
-            originalDownloadFile();
-        }
-    };
 
     // Popup functions
     function openPopup(popupId) {

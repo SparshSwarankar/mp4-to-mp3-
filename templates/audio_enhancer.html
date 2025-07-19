@@ -124,6 +124,7 @@
                 </div>
             </section>
 
+            <!-- Result Section (copied and adapted from index.html) -->
             <section class="result-section" id="resultSection" style="display: none;">
                 <div class="result-card">
                     <div class="success-icon">
@@ -131,234 +132,257 @@
                     </div>
                     <h3>Enhancement Complete!</h3>
                     <p id="resultMessage">Your enhanced audio file is ready to download</p>
-
-                    <div class="audio-player">
-                        <div class="visualizer-container">
-                            <canvas id="audioVisualizer" width="300" height="60"></canvas>
-                        </div>
-                        <audio id="audioPreview" controls></audio>
+                    
+                    <div id="singleFileResult">
+                        <button id="downloadBtn" class="download-btn" style="display:none;">
+                            <i class="fas fa-download"></i> Download MP3
+                        </button>
                     </div>
-
-                    <button id="downloadBtn" class="download-btn">
-                        <i class="fas fa-download"></i> Download Enhanced Audio
-                    </button>
+                    <!-- Remove visualizer and batch download for simplicity -->
                 </div>
             </section>
-        </main>
 
-        <section class="features">
-            <h2>Why Choose Our Audio Enhancer</h2>
-            <div class="features-grid">
-                <div class="feature-card">
-                    <div class="feature-icon">
-                        <i class="fas fa-volume-up"></i>
+            <section class="features">
+                <h2>Why Choose Our Audio Enhancer</h2>
+                <div class="features-grid">
+                    <div class="feature-card">
+                        <div class="feature-icon">
+                            <i class="fas fa-volume-up"></i>
+                        </div>
+                        <h3>Volume Boost</h3>
+                        <p>Increase audio volume while maintaining quality</p>
                     </div>
-                    <h3>Volume Boost</h3>
-                    <p>Increase audio volume while maintaining quality</p>
-                </div>
-                <div class="feature-card">
-                    <div class="feature-icon">
-                        <i class="fas fa-filter"></i>
+                    <div class="feature-card">
+                        <div class="feature-icon">
+                            <i class="fas fa-filter"></i>
+                        </div>
+                        <h3>Noise Reduction</h3>
+                        <p>Remove background noise and improve clarity</p>
                     </div>
-                    <h3>Noise Reduction</h3>
-                    <p>Remove background noise and improve clarity</p>
-                </div>
-                <div class="feature-card">
-                    <div class="feature-icon">
-                        <i class="fas fa-sliders-h"></i>
+                    <div class="feature-card">
+                        <div class="feature-icon">
+                            <i class="fas fa-sliders-h"></i>
+                        </div>
+                        <h3>Bass/Treble Control</h3>
+                        <p>Fine-tune your audio with precise equalization</p>
                     </div>
-                    <h3>Bass/Treble Control</h3>
-                    <p>Fine-tune your audio with precise equalization</p>
                 </div>
-            </div>
-        </section>
+            </section>
 
-        <footer>
-            <div class="footer-modern">
-                <div class="footer-main">
-                    <div class="footer-brand">
-                        <span class="footer-logo">SoundShift</span>
-                        <p class="footer-desc">Convert MP4 videos to high-quality MP3 audio instantly and securely.</p>
-                        <div class="footer-social">
-                            <a href="#" title="Twitter"><i class="fab fa-twitter"></i></a>
-                            <a href="#" title="Facebook"><i class="fab fa-facebook-f"></i></a>
-                            <a href="#" title="Instagram"><i class="fab fa-instagram"></i></a>
-                            <a href="#" title="GitHub"><i class="fab fa-github"></i></a>
+            <footer>
+                <div class="footer-modern">
+                    <div class="footer-main">
+                        <div class="footer-brand">
+                            <span class="footer-logo">SoundShift</span>
+                            <p class="footer-desc">Convert MP4 videos to high-quality MP3 audio instantly and securely.
+                            </p>
+                            <div class="footer-social">
+                                <a href="#" title="Twitter"><i class="fab fa-twitter"></i></a>
+                                <a href="#" title="Facebook"><i class="fab fa-facebook-f"></i></a>
+                                <a href="#" title="Instagram"><i class="fab fa-instagram"></i></a>
+                                <a href="#" title="GitHub"><i class="fab fa-github"></i></a>
+                            </div>
+                        </div>
+                        <div class="footer-links-modern">
+                            <div class="footer-column-modern">
+                                <h4>Tools</h4>
+                                <ul>
+                                    <li><a href="/tools" target="_blank">MP4 to MP3</a></li>
+                                    <li><a href="/tools" target="_blank">Audio Enhancer</a></li>
+                                    <li><a href="https://free2formate.up.railway.app" target="_blank">Video
+                                            Converter</a></li>
+                                    <li><a href="/tools" target="_blank">Audio Trimmer</a></li>
+                                </ul>
+                            </div>
+                            <div class="footer-column-modern">
+                                <h4>Company</h4>
+                                <ul>
+                                    <li><a onclick="openPopup('aboutPopup')" style="cursor: pointer;">About Us</a></li>
+                                    <li><a onclick="openPopup('privacyPopup')" style="cursor: pointer;">Privacy Policy</a>
+                                    </li>
+                                    <li><a onclick="openPopup('termsPopup')" style="cursor: pointer;">Terms of Service</a>
+                                    </li>
+                                    <li><a href="/contact">Contact</a></li>
+                                </ul>
+                            </div>
+                            <div class="footer-column-modern">
+                                <h4>Support</h4>
+                                <ul>
+                                    <li><a onclick="openPopup('helpCenterPopup')" style="cursor: pointer;">Help Center</a>
+                                    </li>
+                                    <li><a onclick="openPopup('faqPopup')" style="cursor: pointer;">FAQ</a></li>
+                                    <li><a onclick="openPopup('reportIssuePopup')" style="cursor: pointer;">Report Issue</a>
+                                    </li>
+                                </ul>
+                            </div>
                         </div>
                     </div>
-                    <div class="footer-links-modern">
-                        <div class="footer-column-modern">
-                            <h4>Tools</h4>
-                            <ul>
-                                <li><a href="/tools" target="_blank">MP4 to MP3</a></li>
-                                <li><a href="/tools" target="_blank">Audio Enhancer</a></li>
-                                <li><a href="https://free2formate.up.railway.app" target="_blank">Video
-                                        Converter</a></li>
-                                <li><a href="/tools" target="_blank">Audio Trimmer</a></li>
-                            </ul>
-                        </div>
-                        <div class="footer-column-modern">
-                            <h4>Company</h4>
-                            <ul>
-                                <li><a onclick="openPopup('aboutPopup')" style="cursor: pointer;">About Us</a></li>
-                                <li><a onclick="openPopup('privacyPopup')" style="cursor: pointer;">Privacy Policy</a>
-                                </li>
-                                <li><a onclick="openPopup('termsPopup')" style="cursor: pointer;">Terms of Service</a>
-                                </li>
-                                <li><a href="/contact">Contact</a></li>
-                            </ul>
-                        </div>
-                        <div class="footer-column-modern">
-                            <h4>Support</h4>
-                            <ul>
-                                <li><a onclick="openPopup('helpCenterPopup')" style="cursor: pointer;">Help Center</a>
-                                </li>
-                                <li><a onclick="openPopup('faqPopup')" style="cursor: pointer;">FAQ</a></li>
-                                <li><a onclick="openPopup('reportIssuePopup')" style="cursor: pointer;">Report Issue</a>
-                                </li>
-                            </ul>
-                        </div>
+                    <div class="footer-bottom">
+                        <span>&copy; 2025 SoundShift. All rights reserved.</span>
+                        <span class="footer-powered">Powered by <a href="#">SoundShift Team</a></span>
                     </div>
                 </div>
-                <div class="footer-bottom">
-                    <span>&copy; 2025 SoundShift. All rights reserved.</span>
-                    <span class="footer-powered">Powered by <a href="#">SoundShift Team</a></span>
+            </footer>
+
+            <!-- ABOUT US -->
+            <div class="popup" id="aboutPopup">
+                <div class="popup-content">
+                    <span class="close" onclick="closePopup('aboutPopup')">&times;</span>
+                    <h2>About Us</h2>
+                    <p>Welcome to Sound Shift — your reliable MP4 to MP3 converter.</p>
+                    <ul>
+                        <li>Our tool provides quick and easy audio extraction from video files.</li>
+                        <li>We prioritize speed, security, and user-friendliness.</li>
+                        <li>No installation needed — fully web-based and always free.</li>
+                        <li>Perfect for converting music, lectures, podcasts, and more.</li>
+                    </ul>
+                    <p>Sound Shift is designed for simplicity and efficiency, helping users convert files on the go.</p>
                 </div>
             </div>
-        </footer>
 
-        <!-- ABOUT US -->
-        <div class="popup" id="aboutPopup">
-            <div class="popup-content">
-                <span class="close" onclick="closePopup('aboutPopup')">&times;</span>
-                <h2>About Us</h2>
-                <p>Welcome to Sound Shift — your reliable MP4 to MP3 converter.</p>
-                <ul>
-                    <li>Our tool provides quick and easy audio extraction from video files.</li>
-                    <li>We prioritize speed, security, and user-friendliness.</li>
-                    <li>No installation needed — fully web-based and always free.</li>
-                    <li>Perfect for converting music, lectures, podcasts, and more.</li>
-                </ul>
-                <p>Sound Shift is designed for simplicity and efficiency, helping users convert files on the go.</p>
-            </div>
-        </div>
-
-        <!-- PRIVACY POLICY -->
-        <div class="popup" id="privacyPopup">
-            <div class="popup-content">
-                <span class="close" onclick="closePopup('privacyPopup')">&times;</span>
-                <h2>Privacy Policy</h2>
-                <p>Your privacy is important to us. Here's how we handle your data:</p>
-                <ul>
-                    <li>We do not collect, store, or share your uploaded files.</li>
-                    <li>All conversions are processed securely and removed after completion.</li>
-                    <li>No personal data is required to use our tool.</li>
-                    <li>Only anonymous analytics may be collected to improve site performance.</li>
-                </ul>
-                <p>By using Sound Shift, you agree to our privacy terms. This policy may be updated periodically.</p>
-            </div>
-        </div>
-
-        <!-- TERMS OF SERVICE -->
-        <div class="popup" id="termsPopup">
-            <div class="popup-content">
-                <span class="close" onclick="closePopup('termsPopup')">&times;</span>
-                <h2>Terms of Service</h2>
-                <p>By using Sound Shift, you agree to the following terms:</p>
-                <ul>
-                    <li>You must only convert files that you own or have the legal right to use.</li>
-                    <li>Do not use this tool for copyrighted content without permission.</li>
-                    <li>We reserve the right to block access to users who abuse the service.</li>
-                    <li>This tool is provided "as is" with no guarantees of uptime or specific features.</li>
-                </ul>
-                <p>Your use of Sound Shift implies acceptance of these terms. We may update these terms periodically, so
-                    please review them regularly.</p>
-            </div>
-        </div>
-
-        <!-- HELP CENTER -->
-        <div class="popup" id="helpCenterPopup">
-            <div class="popup-content">
-                <span class="close" onclick="closePopup('helpCenterPopup')">&times;</span>
-                <h2>Help Center</h2>
-                <p>Welcome to the SoundShift Help Center. Find answers to common questions and learn how to use our
-                    tools effectively.</p>
-                <h3>Quick Start Guide</h3>
-                <ul>
-                    <li>Upload your MP4 file by dragging and dropping or clicking "Browse Files"</li>
-                    <li>Select your preferred conversion quality</li>
-                    <li>Click "Convert Now" and wait for the process to complete</li>
-                    <li>Download your converted MP3 file</li>
-                </ul>
-                <h3>Common Issues</h3>
-                <ul>
-                    <li>File size limit: Maximum 1GB per file</li>
-                    <li>Supported formats: MP4 videos only</li>
-                    <li>Conversion time depends on file size and internet speed</li>
-                </ul>
-                <p>Need more help? Contact our support team through the Contact page.</p>
-            </div>
-        </div>
-
-        <!-- FAQ -->
-        <div class="popup" id="faqPopup">
-            <div class="popup-content">
-                <span class="close" onclick="closePopup('faqPopup')">&times;</span>
-                <h2>Frequently Asked Questions</h2>
-                <div class="faq-item">
-                    <h3>Is this service free?</h3>
-                    <p>Yes, SoundShift is completely free to use with no hidden charges.</p>
-                </div>
-                <div class="faq-item">
-                    <h3>What's the maximum file size?</h3>
-                    <p>You can upload files up to 1GB in size.</p>
-                </div>
-                <div class="faq-item">
-                    <h3>How long does conversion take?</h3>
-                    <p>Conversion time varies based on file size and internet speed, typically ranging from a few
-                        seconds to a few minutes.</p>
-                </div>
-                <div class="faq-item">
-                    <h3>Are my files secure?</h3>
-                    <p>Yes, we process files securely and delete them immediately after conversion. We never store your
-                        files.</p>
-                </div>
-                <div class="faq-item">
-                    <h3>Can I convert multiple files at once?</h3>
-                    <p>Yes, use our batch conversion mode to convert multiple files simultaneously.</p>
+            <!-- PRIVACY POLICY -->
+            <div class="popup" id="privacyPopup">
+                <div class="popup-content">
+                    <span class="close" onclick="closePopup('privacyPopup')">&times;</span>
+                    <h2>Privacy Policy</h2>
+                    <p>Your privacy is important to us. Here's how we handle your data:</p>
+                    <ul>
+                        <li>We do not collect, store, or share your uploaded files.</li>
+                        <li>All conversions are processed securely and removed after completion.</li>
+                        <li>No personal data is required to use our tool.</li>
+                        <li>Only anonymous analytics may be collected to improve site performance.</li>
+                    </ul>
+                    <p>By using Sound Shift, you agree to our privacy terms. This policy may be updated periodically.</p>
                 </div>
             </div>
-        </div>
 
-        <!-- REPORT ISSUE -->
-        <div class="popup" id="reportIssuePopup">
-            <div class="popup-content">
-                <span class="close" onclick="closePopup('reportIssuePopup')">&times;</span>
-                <h2>Report an Issue</h2>
-                <p>Having problems with our service? Let us know and we'll help you resolve it quickly.</p>
-                <div class="report-section">
+            <!-- TERMS OF SERVICE -->
+            <div class="popup" id="termsPopup">
+                <div class="popup-content">
+                    <span class="close" onclick="closePopup('termsPopup')">&times;</span>
+                    <h2>Terms of Service</h2>
+                    <p>By using Sound Shift, you agree to the following terms:</p>
+                    <ul>
+                        <li>You must only convert files that you own or have the legal right to use.</li>
+                        <li>Do not use this tool for copyrighted content without permission.</li>
+                        <li>We reserve the right to block access to users who abuse the service.</li>
+                        <li>This tool is provided "as is" with no guarantees of uptime or specific features.</li>
+                    </ul>
+                    <p>Your use of Sound Shift implies acceptance of these terms. We may update these terms periodically, so
+                        please review them regularly.</p>
+                </div>
+            </div>
+
+            <!-- HELP CENTER -->
+            <div class="popup" id="helpCenterPopup">
+                <div class="popup-content">
+                    <span class="close" onclick="closePopup('helpCenterPopup')">&times;</span>
+                    <h2>Help Center</h2>
+                    <p>Welcome to the SoundShift Help Center. Find answers to common questions and learn how to use our
+                        tools effectively.</p>
+                    <h3>Quick Start Guide</h3>
+                    <ul>
+                        <li>Upload your MP4 file by dragging and dropping or clicking "Browse Files"</li>
+                        <li>Select your preferred conversion quality</li>
+                        <li>Click "Convert Now" and wait for the process to complete</li>
+                        <li>Download your converted MP3 file</li>
+                    </ul>
                     <h3>Common Issues</h3>
                     <ul>
-                        <li>Conversion fails or takes too long</li>
-                        <li>Download issues</li>
-                        <li>Audio quality problems</li>
-                        <li>Website functionality issues</li>
+                        <li>File size limit: Maximum 1GB per file</li>
+                        <li>Supported formats: MP4 videos only</li>
+                        <li>Conversion time depends on file size and internet speed</li>
                     </ul>
+                    <p>Need more help? Contact our support team through the Contact page.</p>
                 </div>
-                <p>For immediate assistance, please include:</p>
-                <ul>
-                    <li>A clear description of the issue</li>
-                    <li>Steps to reproduce the problem</li>
-                    <li>Your browser and operating system</li>
-                    <li>Any error messages you received</li>
-                </ul>
-                <p>Use our <a href="/contact">Contact form</a> to submit your report, and we'll get back to you as
-                    soon as possible.</p>
             </div>
-        </div>
+
+            <!-- FAQ -->
+            <div class="popup" id="faqPopup">
+                <div class="popup-content">
+                    <span class="close" onclick="closePopup('faqPopup')">&times;</span>
+                    <h2>Frequently Asked Questions</h2>
+                    <div class="faq-item">
+                        <h3>Is this service free?</h3>
+                        <p>Yes, SoundShift is completely free to use with no hidden charges.</p>
+                    </div>
+                    <div class="faq-item">
+                        <h3>What's the maximum file size?</h3>
+                        <p>You can upload files up to 1GB in size.</p>
+                    </div>
+                    <div class="faq-item">
+                        <h3>How long does conversion take?</h3>
+                        <p>Conversion time varies based on file size and internet speed, typically ranging from a few
+                            seconds to a few minutes.</p>
+                    </div>
+                    <div class="faq-item">
+                        <h3>Are my files secure?</h3>
+                        <p>Yes, we process files securely and delete them immediately after conversion. We never store your
+                            files.</p>
+                    </div>
+                    <div class="faq-item">
+                        <h3>Can I convert multiple files at once?</h3>
+                        <p>Yes, use our batch conversion mode to convert multiple files simultaneously.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- REPORT ISSUE -->
+            <div class="popup" id="reportIssuePopup">
+                <div class="popup-content">
+                    <span class="close" onclick="closePopup('reportIssuePopup')">&times;</span>
+                    <h2>Report an Issue</h2>
+                    <p>Having problems with our service? Let us know and we'll help you resolve it quickly.</p>
+                    <div class="report-section">
+                        <h3>Common Issues</h3>
+                        <ul>
+                            <li>Conversion fails or takes too long</li>
+                            <li>Download issues</li>
+                            <li>Audio quality problems</li>
+                            <li>Website functionality issues</li>
+                        </ul>
+                    </div>
+                    <p>For immediate assistance, please include:</p>
+                    <ul>
+                        <li>A clear description of the issue</li>
+                        <li>Steps to reproduce the problem</li>
+                        <li>Your browser and operating system</li>
+                        <li>Any error messages you received</li>
+                    </ul>
+                    <p>Use our <a href="/contact">Contact form</a> to submit your report, and we'll get back to you as
+                        soon as possible.</p>
+                </div>
+            </div>
+        </main>
+
+        <script src="/static/audio_enhancer.js"></script>
+        <!-- <script src="/static/updated_script.js"></script> -->
+        <script>
+            function openPopup(id) {
+                document.getElementById(id).style.display = "block";
+                document.body.style.overflow = "hidden";
+            }
+
+            function closePopup(id) {
+                document.getElementById(id).style.display = "none";
+                document.body.style.overflow = "";
+            }
+
+            // Support both click and touch for closing popups when tapping outside
+            function handlePopupClose(event) {
+                const popups = document.querySelectorAll('.popup');
+                popups.forEach(popup => {
+                    if (event.target === popup) {
+                        popup.style.display = "none";
+                        document.body.style.overflow = "";
+                    }
+                });
+            }
+            window.addEventListener('click', handlePopupClose);
+            window.addEventListener('touchstart', handlePopupClose);
+        </script>
     </div>
 
-    <script src="/static/updated_script.js"></script>
 </body>
 
 </html>

@@ -1,4 +1,5 @@
 document.addEventListener('DOMContentLoaded', function () {
+    // === DOM Elements ===
     const dropZone = document.getElementById('dropZone');
     const fileInput = document.getElementById('fileInput');
     const fileInfo = document.getElementById('fileInfo');
@@ -13,6 +14,39 @@ document.addEventListener('DOMContentLoaded', function () {
     const progressBar = document.getElementById('progressBar');
     const progressStatus = document.getElementById('progressStatus');
     const progressPercentage = document.getElementById('progressPercentage');
+    const resultSection = document.getElementById('resultSection');
+    const resultMessage = document.getElementById('resultMessage');
+    const singleFileResult = document.getElementById('singleFileResult');
+    // === Extra DOM for theme toggle (for consistency) ===
+    const themeToggle = document.getElementById('themeToggle');
+
+    // === Theme Initialization (WORKS ON ALL PAGES) ===
+    function initializeTheme() {
+        if (!themeToggle) return;
+        let savedTheme = localStorage.getItem('theme');
+        if (!savedTheme) {
+            savedTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+            localStorage.setItem('theme', savedTheme);
+        }
+        document.documentElement.setAttribute('data-theme', savedTheme);
+        themeToggle.checked = savedTheme === 'dark';
+        themeToggle.setAttribute('aria-checked', themeToggle.checked ? 'true' : 'false');
+        themeToggle.addEventListener('change', function () {
+            const theme = this.checked ? 'dark' : 'light';
+            document.documentElement.setAttribute('data-theme', theme);
+            localStorage.setItem('theme', theme);
+            themeToggle.setAttribute('aria-checked', this.checked ? 'true' : 'false');
+        });
+        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
+            if (!localStorage.getItem('theme')) {
+                const theme = e.matches ? 'dark' : 'light';
+                document.documentElement.setAttribute('data-theme', theme);
+                themeToggle.checked = theme === 'dark';
+                themeToggle.setAttribute('aria-checked', themeToggle.checked ? 'true' : 'false');
+            }
+        });
+    }
+    initializeTheme();
 
     let selectedFile = null;
     let trimmedBlobUrl = null;
@@ -33,13 +67,19 @@ document.addEventListener('DOMContentLoaded', function () {
         audioDuration = 0;
         trimmedBlobUrl && URL.revokeObjectURL(trimmedBlobUrl);
         trimmedBlobUrl = null;
+        if (resultSection) resultSection.style.display = 'none';
+        if (singleFileResult) singleFileResult.style.display = 'none';
     }
 
     function handleFile(file) {
         if (!file) return;
-        // Only allow MP3 files
-        if (file.type !== 'audio/mp3' && file.type !== 'audio/mpeg') {
-            fileInfo.textContent = 'Only MP3 files are allowed.';
+        // Only allow audio files (MP3 and WAV)
+        const validTypes = ['audio/mp3', 'audio/mpeg', 'audio/wav'];
+        const validExtensions = ['.mp3', '.wav'];
+        const fileName = file.name ? file.name.toLowerCase() : '';
+        const hasValidExt = validExtensions.some(ext => fileName.endsWith(ext));
+        if (!validTypes.includes(file.type) && !hasValidExt) {
+            fileInfo.textContent = 'Only MP3 and WAV audio files are allowed.';
             fileInfo.style.color = 'red';
             return;
         }
@@ -154,6 +194,17 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     });
 
+    function showResult() {
+        if (resultMessage) {
+            resultMessage.textContent = 'Your trimmed audio file is ready to download';
+            resultMessage.style.color = 'green';
+        }
+        if (resultSection) resultSection.style.display = 'block';
+        if (singleFileResult) singleFileResult.style.display = 'block';
+        if (downloadBtn) downloadBtn.style.display = 'inline-block';
+        if (document.getElementById('batchFileResult')) document.getElementById('batchFileResult').style.display = 'none';
+    }
+
     // Trim button
     trimBtn.addEventListener('click', async function () {
         if (!selectedFile) return;
@@ -173,23 +224,38 @@ document.addEventListener('DOMContentLoaded', function () {
             xhr.open('POST', '/trim-audio', true);
             xhr.responseType = 'blob';
 
+            let uploadDone = false;
+            let startTime = Date.now();
+
             xhr.upload.onprogress = function (e) {
                 if (e.lengthComputable) {
-                    const percent = Math.round((e.loaded / e.total) * 100);
-                    progressBar.style.width = percent + '%';
-                    progressPercentage.textContent = percent + '%';
+                    // Upload phase: 0% - 50%
+                    const uploadPercent = Math.round((e.loaded / e.total) * 50);
+                    progressBar.style.width = uploadPercent + '%';
+                    progressPercentage.textContent = uploadPercent + '%';
+                    progressStatus.textContent = 'Uploading...';
+                }
+            };
+            xhr.onreadystatechange = function () {
+                if (xhr.readyState === XMLHttpRequest.HEADERS_RECEIVED && !uploadDone) {
+                    uploadDone = true;
+                    // Upload phase is 50%, now conversion phase
+                    progressBar.style.width = '50%';
+                    progressPercentage.textContent = '50%';
+                    progressStatus.textContent = 'Converting...';
                 }
             };
             xhr.onload = function () {
+                // Conversion phase: 50% - 100%
+                progressBar.style.width = '100%';
+                progressPercentage.textContent = '100%';
                 if (xhr.status === 200) {
                     progressStatus.textContent = 'Trim complete!';
-                    progressBar.style.width = '100%';
-                    progressPercentage.textContent = '100%';
                     trimmedBlobUrl && URL.revokeObjectURL(trimmedBlobUrl);
                     trimmedBlobUrl = URL.createObjectURL(xhr.response);
                     audioPreview.src = trimmedBlobUrl;
                     audioPreview.load();
-                    downloadBtn.style.display = 'inline-block';
+                    showResult();
                 } else {
                     // Try to read the error message from the backend
                     const reader = new FileReader();

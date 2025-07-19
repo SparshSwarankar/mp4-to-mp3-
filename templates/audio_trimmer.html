@@ -160,9 +160,26 @@
                     </div>
 
                     <button id="trimBtn" class="convert-btn" disabled>Trim Audio</button>
-                    <button id="downloadBtn" class="download-btn" style="display:none;margin-top:12px;">
-                        <i class="fas fa-download"></i> Download Trimmed Audio
-                    </button>
+                </div>
+            </section>
+
+            <!-- Result Section (copied and adapted from index.html) -->
+            <section class="result-section" id="resultSection" style="display: none;">
+                <div class="result-card">
+                    <div class="success-icon">
+                        <i class="fas fa-check-circle"></i>
+                    </div>
+                    <h3>Trim Complete!</h3>
+                    <p id="resultMessage">Your trimmed audio file is ready to download</p>
+                    <div class="audio-player">
+                        <audio id="audioPreview" controls style="width:100%;"></audio>
+                    </div>
+                    <div id="singleFileResult">
+                        <button id="downloadBtn" class="download-btn" style="display:none;">
+                            <i class="fas fa-download"></i> Download MP3
+                        </button>
+                    </div>
+                    <!-- Remove visualizer and batch download for simplicity -->
                 </div>
             </section>
         </main>
@@ -380,7 +397,6 @@
     </div>
 
     <script src="/static/audio_trimmer.js"></script>
-    <script src="/static/updated_script.js"></script>
     <script>
         function openPopup(id) {
             document.getElementById(id).style.display = "block";

@@ -9,6 +9,7 @@ import zipfile
 import logging
 import datetime
 import shutil
+import json
 
 # Configure logging
 logging.basicConfig(
@@ -29,7 +30,10 @@ app = Flask(__name__, template_folder='templates', static_folder='static')
 CORS(app, resources={r"/*": {"origins": "*"}}, supports_credentials=True)
 
 # Configuration
-app.config['MAX_CONTENT_LENGTH'] = 1024 * 1024 * 1024  # 1GB max upload
+if os.environ.get("RENDER"):
+    app.config['MAX_CONTENT_LENGTH'] = 100 * 1024 * 1024  # 100MB for Render
+else:
+    app.config['MAX_CONTENT_LENGTH'] = 1024 * 1024 * 1024  # 1GB for local
 app.config['UPLOAD_FOLDER'] = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'uploads')
 app.config['CONVERTED_FOLDER'] = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'converted')
 
@@ -43,6 +47,23 @@ ALLOWED_EXTENSIONS = {'mp3', 'wav'}
 def allowed_file(filename):
     return '.' in filename and \
            filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+def has_audio_stream(input_path):
+    """Return True if the file has an audio stream, else False."""
+    try:
+        result = subprocess.run(
+            [
+                'ffprobe', '-v', 'error', '-select_streams', 'a',
+                '-show_entries', 'stream=codec_type',
+                '-of', 'json', input_path
+            ],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE
+        )
+        info = json.loads(result.stdout.decode())
+        return 'streams' in info and len(info['streams']) > 0
+    except Exception as e:
+        return False
 
 @app.route('/')
 def home():
@@ -85,7 +106,6 @@ def convert():
         response.headers['Access-Control-Allow-Credentials'] = 'true'
         return response
 
-    # Accept both single and multiple files
     files = request.files.getlist('file')
     if not files or files[0].filename == '':
         resp = jsonify({'error': 'No file(s) uploaded'})
@@ -109,7 +129,13 @@ def convert():
             input_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
             file.save(input_path)
             uploaded_files.append(input_path)
-            
+
+            # --- ADD THIS CHECK ---
+            if not has_audio_stream(input_path):
+                logger.error(f"No audio stream found in {filename}")
+                print(f"No audio stream found in {filename}")
+                continue  # Skip this file
+
             print("\n" + "="*50)
             print("File Upload Details:")
             print("="*50)
@@ -120,16 +146,18 @@ def convert():
             print("="*50 + "\n")
             
             # Convert the file (support both MP4 and MKV as input)
-            mp3_filename = filename.rsplit('.', 1)[0] + '.mp3'
+            # Output filename: converted_<originalname>.mp3
+            base_name = os.path.splitext(filename)[0]
+            mp3_filename = f"converted_{base_name}.mp3"
             mp3_path = os.path.join(app.config['CONVERTED_FOLDER'], mp3_filename)
-            
+
             try:
                 result = subprocess.run(
                     [
-                        'ffmpeg', '-y', '-loglevel', 'error', 
-                        '-i', input_path, 
-                        '-vn', '-acodec', 'libmp3lame', 
-                        '-ab', '192k', 
+                        'ffmpeg', '-y', '-loglevel', 'error',
+                        '-i', input_path,
+                        '-vn', '-acodec', 'libmp3lame',
+                        '-ab', '192k',
                         mp3_path
                     ],
                     stdout=subprocess.PIPE,
@@ -228,6 +256,8 @@ def convert():
                 download_name=os.path.basename(mp3_paths[0]),
                 mimetype='audio/mpeg'
             )
+            # Explicitly set Content-Disposition for all browsers
+            response.headers["Content-Disposition"] = f'attachment; filename="{os.path.basename(mp3_paths[0])}"'
             response.headers['Access-Control-Allow-Origin'] = '*'
             response.headers['Access-Control-Allow-Credentials'] = 'true'
             response.headers['Access-Control-Allow-Headers'] = 'Content-Type'
@@ -288,6 +318,7 @@ def convert():
             download_name=f'converted_{len(mp3_paths)}_mp3s.zip',
             mimetype='application/zip'
         )
+        response.headers["Content-Disposition"] = f'attachment; filename="converted_{len(mp3_paths)}_mp3s.zip"'
         response.headers['Access-Control-Allow-Origin'] = '*'
         response.headers['Access-Control-Allow-Credentials'] = 'true'
         response.headers['Access-Control-Allow-Headers'] = 'Content-Type'
@@ -295,12 +326,13 @@ def convert():
         return response
 
     except Exception as e:
-        # Clean up in case of errors
-        for path in uploaded_files + mp3_paths:
-            if os.path.exists(path):
-                os.remove(path)
-        logger.error(f"Error during conversion process: {e}")
-        resp = jsonify({'error': str(e)})
+        import traceback
+        tb = traceback.format_exc()
+        logger.error(f"Error during conversion process: {e}\n{tb}")
+        print("Conversion error:", e)
+        print(tb)
+        # Add this to return the error to the frontend for debugging
+        resp = jsonify({'error': str(e), 'traceback': tb})
         resp.headers['Access-Control-Allow-Origin'] = '*'
         return resp, 500
 
@@ -333,12 +365,10 @@ def enhance_audio():
         filename = secure_filename(file.filename)
         input_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
         file.save(input_path)
-        
-        # Prepare output filename (avoid double "enhanced_")
-        if filename.startswith("enhanced_"):
-            output_filename = filename
-        else:
-            output_filename = f"enhanced_{filename}"
+
+        # Output filename: enhanced_<originalname>.<ext>
+        base_name, ext = os.path.splitext(filename)
+        output_filename = f"enhanced_{base_name}{ext}"
         output_path = os.path.join(app.config['CONVERTED_FOLDER'], output_filename)
         
         # Build FFmpeg filter chain
@@ -371,13 +401,14 @@ def enhance_audio():
             raise Exception(f'Audio enhancement failed: {result.stderr.decode()}')
         
         # Return enhanced file
-        return send_file(
+        response = send_file(
             output_path,
             as_attachment=True,
             download_name=output_filename,
             mimetype='audio/mpeg'
         )
-        
+        response.headers["Content-Disposition"] = f'attachment; filename="{output_filename}"'
+        return response
     except Exception as e:
         # Clean up files in case of error
         if os.path.exists(input_path):
@@ -419,11 +450,12 @@ def trim_audio():
     input_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
     file.save(input_path)
 
-    output_filename = f"trimmed_{filename.rsplit('.', 1)[0]}.mp3"
+    # Output filename: trimmed_<originalname>.mp3
+    base_name = os.path.splitext(filename)[0]
+    output_filename = f"trimmed_{base_name}.mp3"
     output_path = os.path.join(app.config['CONVERTED_FOLDER'], output_filename)
 
     try:
-
         ffmpeg_cmd = [
             'ffmpeg', '-y',
             '-ss', str(start), '-to', str(end),
@@ -432,11 +464,9 @@ def trim_audio():
             '-acodec', 'libmp3lame', '-ab', '192k',
             output_path
         ]
-        # print("Running FFmpeg command:", " ".join(ffmpeg_cmd))
         result = subprocess.run(ffmpeg_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         if result.returncode != 0:
             error_msg = result.stderr.decode()
-            # print("FFmpeg error:", error_msg)
             return jsonify({'error': f"FFmpeg failed: {error_msg}"}), 500
 
         # Ensure file is closed before attempting to delete it in finally
@@ -449,10 +479,10 @@ def trim_audio():
             download_name=output_filename,
             mimetype='audio/mpeg'
         )
+        response.headers["Content-Disposition"] = f'attachment; filename="{output_filename}"'
         return response
 
     except Exception as e:
-        # print("Trim error:", str(e))
         return jsonify({'error': str(e)}), 500
     finally:
         import time
@@ -461,13 +491,11 @@ def trim_audio():
             if os.path.exists(input_path):
                 os.remove(input_path)
         except Exception as e:
-            # print(f"Could not remove input file: {e}")
             pass
         try:
             if os.path.exists(output_path):
                 os.remove(output_path)
         except Exception as e:
-            # print(f"Could not remove output file: {e}")
             pass
 
 @app.route('/audio-trimmer')
@@ -482,5 +510,7 @@ if __name__ == '__main__':
         print("\nGracefully shutting down server...")
         sys.exit(0)
 
+    signal.signal(signal.SIGINT, handle_sigint)
+    app.run(host='0.0.0.0', port=5000, debug=True)
     signal.signal(signal.SIGINT, handle_sigint)
     app.run(host='0.0.0.0', port=5000, debug=True)
