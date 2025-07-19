@@ -1,4 +1,3 @@
-// ...your JS code...
 document.addEventListener('DOMContentLoaded', function () {
     // === DOM Elements ===
     const dropZone = document.getElementById('dropZone');
@@ -67,7 +66,7 @@ document.addEventListener('DOMContentLoaded', function () {
         themeToggle.setAttribute('aria-checked', themeToggle.checked ? 'true' : 'false');
 
         // Theme toggle change handler
-        themeToggle.addEventListener('change', function() {
+        themeToggle.addEventListener('change', function () {
             const theme = this.checked ? 'dark' : 'light';
             document.documentElement.setAttribute('data-theme', theme);
             localStorage.setItem('theme', theme);
@@ -89,7 +88,7 @@ document.addEventListener('DOMContentLoaded', function () {
     initializeTheme();
 
     // === Theme Toggle and Batch Toggle Label Highlight ===
-    (function() {
+    (function () {
         // --- THEME TOGGLE LOGIC (robust for all pages) ---
         const themeToggle = document.getElementById('themeToggle');
         if (themeToggle) {
@@ -109,7 +108,7 @@ document.addEventListener('DOMContentLoaded', function () {
             themeToggle.oninput = null;
 
             // Use 'change' event for best reliability (not 'input')
-            themeToggle.addEventListener('change', function() {
+            themeToggle.addEventListener('change', function () {
                 const theme = this.checked ? 'dark' : 'light';
                 html.setAttribute('data-theme', theme);
                 localStorage.setItem('theme', theme);
@@ -311,12 +310,12 @@ document.addEventListener('DOMContentLoaded', function () {
     function resetConverter() {
         selectedFiles = [];
         convertedFiles = [];
-        
+
         if (fileInput) fileInput.value = '';
         if (fileList) fileList.innerHTML = '';
         if (fileInfo) {
-        fileInfo.textContent = 'Maximum file size: 500MB';
-        fileInfo.style.color = 'var(--text-secondary)';
+            fileInfo.textContent = 'Maximum file size: 500MB';
+            fileInfo.style.color = 'var(--text-secondary)';
         }
         if (progressContainer) progressContainer.style.display = 'none';
         if (progressBar) progressBar.style.width = '0%';
@@ -326,11 +325,11 @@ document.addEventListener('DOMContentLoaded', function () {
             convertBtn.textContent = 'Convert Now';
         }
         if (audioPreview) {
-        audioPreview.pause();
-        audioPreview.src = '';
+            audioPreview.pause();
+            audioPreview.src = '';
         }
         if (batchDownloadList) batchDownloadList.innerHTML = '';
-        
+
         // Reset progress indicators
         const elements = {
             'progressStatus': 'Preparing...',
@@ -366,8 +365,8 @@ document.addEventListener('DOMContentLoaded', function () {
         if (!validateFile(file)) return;
         selectedFiles = [file];
         if (fileInfo) {
-        fileInfo.textContent = `Selected: ${file.name} (${formatFileSize(file.size)})`;
-        fileInfo.style.color = 'var(--text-secondary)';
+            fileInfo.textContent = `Selected: ${file.name} (${formatFileSize(file.size)})`;
+            fileInfo.style.color = 'var(--text-secondary)';
         }
         if (convertBtn) convertBtn.disabled = false;
     }
@@ -390,10 +389,10 @@ document.addEventListener('DOMContentLoaded', function () {
         updateFileList();
         if (convertBtn) convertBtn.disabled = selectedFiles.length === 0;
         if (fileInfo) {
-        fileInfo.textContent = skipped
-            ? `Some files skipped. ${selectedFiles.length} valid file(s) selected.`
-            : `${selectedFiles.length} file(s) selected.`;
-        fileInfo.style.color = skipped ? 'red' : 'var(--text-secondary)';
+            fileInfo.textContent = skipped
+                ? `Some files skipped. ${selectedFiles.length} valid file(s) selected.`
+                : `${selectedFiles.length} file(s) selected.`;
+            fileInfo.style.color = skipped ? 'red' : 'var(--text-secondary)';
         }
     }
 
@@ -467,50 +466,41 @@ document.addEventListener('DOMContentLoaded', function () {
                 const xhr = new XMLHttpRequest();
                 const formData = new FormData();
                 formData.append('file', file);
-                // Progress tracking variables
-                let startTime = Date.now();
-                let lastLoaded = 0;
-                let lastTime = startTime;
+
+                let uploadDone = false;
 
                 xhr.upload.addEventListener('progress', (event) => {
                     if (event.lengthComputable) {
-                        const currentTime = Date.now();
-                        const timeDiff = (currentTime - lastTime) / 1000; // seconds
-                        const loadedDiff = event.loaded - lastLoaded;
-                        const currentSpeed = (loadedDiff / 1024) / timeDiff; // KB/s
-
-                        // Calculate progress percentage
-                        const progress = (event.loaded / event.total) * 100;
-                        progressBar.style.width = `${progress}%`;
-                        progressPercentage.textContent = `${Math.round(progress)}%`;
-                        
-                        // Update current file info
+                        // Upload phase: 0% - 50%
+                        const uploadPercent = Math.round((event.loaded / event.total) * 50);
+                        progressBar.style.width = `${uploadPercent}%`;
+                        progressPercentage.textContent = `${uploadPercent}%`;
                         currentFile.textContent = file.name;
-                        
-                        // Update speed
-                        uploadSpeed.textContent = `${Math.round(currentSpeed)} KB/s`;
-                        
-                        // Update uploaded size
+                        uploadSpeed.textContent = `${Math.round(event.loaded / ((Date.now() - startTime) / 1000) / 1024) || 0} KB/s`;
                         uploadedSize.textContent = `${Math.round(event.loaded / 1024)} KB`;
-                        
-                        // Calculate time remaining
-                        if (currentSpeed > 0) {
-                            const remainingBytes = event.total - event.loaded;
-                            const remainingSeconds = (remainingBytes / 1024) / currentSpeed;
-                            timeRemaining.textContent = remainingSeconds > 60 
-                                ? `${Math.round(remainingSeconds / 60)}m ${Math.round(remainingSeconds % 60)}s`
-                                : `${Math.round(remainingSeconds)}s`;
-                        }
-
-                        // Update for next calculation
-                        lastLoaded = event.loaded;
-                        lastTime = currentTime;
-                        
+                        timeRemaining.textContent = 'Uploading...';
                         progressStatus.textContent = `Uploading ${file.name}...`;
                     }
                 });
 
+                xhr.onreadystatechange = function () {
+                    // When upload is done and waiting for conversion
+                    if (xhr.readyState === XMLHttpRequest.HEADERS_RECEIVED && !uploadDone) {
+                        uploadDone = true;
+                        // Upload phase is 50%, now conversion phase
+                        progressBar.style.width = `50%`;
+                        progressPercentage.textContent = `50%`;
+                        progressStatus.textContent = `Converting ${file.name}...`;
+                        timeRemaining.textContent = 'Converting...';
+                    }
+                };
+
                 xhr.addEventListener('load', () => {
+                    // Conversion phase: 50% - 100%
+                    progressBar.style.width = `100%`;
+                    progressPercentage.textContent = `100%`;
+                    progressStatus.textContent = `Conversion complete!`;
+                    timeRemaining.textContent = 'Done';
                     if (xhr.status === 200) {
                         try {
                             const response = new Response(xhr.response);
@@ -531,6 +521,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     reject(new Error('Upload aborted'));
                 });
 
+                let startTime = Date.now();
                 xhr.open('POST', url);
                 xhr.responseType = 'blob';
                 xhr.send(formData);
@@ -549,15 +540,15 @@ document.addEventListener('DOMContentLoaded', function () {
             try {
                 progressStatus.textContent = 'Preparing batch upload...';
                 const response = await uploadFileWithProgress(selectedFiles[0], backendUrl);
-                
+
                 if (!response.ok) throw new Error('Conversion failed');
 
-            const blob = await response.blob();
+                const blob = await response.blob();
                 if (!blob || blob.size === 0) throw new Error('Empty response');
 
                 const filename = response.headers.get('Content-Disposition')?.match(/filename="?([^"]+)"?/)?.[1] || 'converted_mp3s.zip';
-            const url = URL.createObjectURL(blob);
-            convertedFiles = [{ url, filename }];
+                const url = URL.createObjectURL(blob);
+                convertedFiles = [{ url, filename }];
 
                 progressStatus.textContent = 'Batch conversion complete!';
                 progressBar.style.width = '100%';
@@ -663,13 +654,13 @@ document.addEventListener('DOMContentLoaded', function () {
                     document.body.appendChild(a);
                     a.click();
                     document.body.removeChild(a);
-                    
+
                     // Delete the ZIP file after download
                     await deleteConvertedFile(fileObj.filename);
-                    
+
                     // Clean up the URL object
                     URL.revokeObjectURL(fileObj.url);
-                    
+
                     // Reset the converter after a short delay
                     setTimeout(resetConverter, 500);
                 };
@@ -705,13 +696,13 @@ document.addEventListener('DOMContentLoaded', function () {
                 document.body.appendChild(a);
                 a.click();
                 document.body.removeChild(a);
-                
+
                 // Delete the file after download
                 await deleteConvertedFile(fileObj.filename);
-                
+
                 // Clean up the URL object
                 URL.revokeObjectURL(fileObj.url);
-                
+
                 // Reset the converter after a short delay
                 setTimeout(resetConverter, 500);
             };
@@ -726,17 +717,17 @@ document.addEventListener('DOMContentLoaded', function () {
                     document.body.appendChild(a);
                     a.click();
                     document.body.removeChild(a);
-                    
+
                     // Delete each file after download
                     await deleteConvertedFile(fileObj.filename);
-                    
+
                     // Clean up the URL object
                     URL.revokeObjectURL(fileObj.url);
                 }
                 // Reset the converter after all files are downloaded
                 setTimeout(resetConverter, 500);
             };
-            
+
             // Update batch download list with individual file downloads
             batchDownloadList.innerHTML = '';
             convertedFiles.forEach((fileObj, idx) => {
@@ -746,27 +737,27 @@ document.addEventListener('DOMContentLoaded', function () {
                     <span>File ${idx + 1}</span>
                     <button class="batch-download-btn">Download</button>
                 `;
-                
+
                 const downloadBtn = listItem.querySelector('.batch-download-btn');
-                downloadBtn.onclick = async function() {
+                downloadBtn.onclick = async function () {
                     const a = document.createElement('a');
                     a.href = fileObj.url;
                     a.download = fileObj.filename;
                     document.body.appendChild(a);
                     a.click();
                     document.body.removeChild(a);
-                    
+
                     // Delete the individual file after download
                     await deleteConvertedFile(fileObj.filename);
-                    
+
                     // Clean up the URL object
                     URL.revokeObjectURL(fileObj.url);
-                    
+
                     // Disable the button after download
                     this.disabled = true;
                     this.textContent = 'Downloaded';
                 };
-                
+
                 batchDownloadList.appendChild(listItem);
             });
         }
@@ -799,7 +790,7 @@ document.addEventListener('DOMContentLoaded', function () {
         if (audioPreview._mediaSource) {
             try {
                 audioPreview._mediaSource.disconnect();
-            } catch (e) {}
+            } catch (e) { }
             audioPreview._mediaSource = null;
         }
 
@@ -842,10 +833,10 @@ document.addEventListener('DOMContentLoaded', function () {
     // === Contact Form Handler (for contact.html) ===
     const contactForm = document.getElementById('contactForm');
     if (contactForm) {
-        contactForm.addEventListener('submit', function(e) {
+        contactForm.addEventListener('submit', function (e) {
             e.preventDefault();
             showCustomErrorModal('success', "Thank you for contacting us! We'll get back to you soon.");
-                contactForm.reset();
+            contactForm.reset();
         });
     }
 
@@ -864,7 +855,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     function handleAudioFile(file) {
         if (!validateAudioFile(file)) return;
-        
+
         selectedAudioFile = file;
         if (fileInfo) fileInfo.textContent = `Selected: ${file.name} (${formatFileSize(file.size)})`;
         if (fileInfo) fileInfo.style.color = 'var(--text-secondary)';
@@ -904,7 +895,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
         try {
             const response = await uploadFileWithProgress(selectedAudioFile, '/enhance', formData, true);
-            
+
             if (!response.ok) throw new Error('Enhancement failed');
 
             const blob = await response.blob();
@@ -916,7 +907,7 @@ document.addEventListener('DOMContentLoaded', function () {
             if (progressStatus) progressStatus.textContent = 'Enhancement complete!';
             if (progressBar) progressBar.style.width = '100%';
             if (progressPercentage) progressPercentage.textContent = '100%';
-            
+
             showAudioResult();
         } catch (error) {
             showCustomErrorModal('enhancement', error.message || 'Enhancement failed. Please try again.');
@@ -939,7 +930,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     function downloadEnhancedFile() {
         if (!enhancedAudioFile) return;
-        
+
         const a = document.createElement('a');
         a.href = enhancedAudioFile.url;
         a.download = enhancedAudioFile.filename;
@@ -967,7 +958,7 @@ document.addEventListener('DOMContentLoaded', function () {
         const elapsed = (Date.now() - startTime) / 1000;
         const speed = loaded / elapsed;
         const remaining = (total - loaded) / speed;
-        
+
         if (remaining < 60) {
             return Math.round(remaining) + 's';
         } else if (remaining < 3600) {
@@ -979,7 +970,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // Ensure the overall resetConverter also resets audio progress if applicable
     const originalResetConverter = resetConverter; // Save original for chaining
-    resetConverter = function() {
+    resetConverter = function () {
         originalResetConverter();
         resetAudioProgress();
         // Additional resets if needed based on audio context
@@ -993,7 +984,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // Modify downloadFile to handle both video and audio downloads
     const originalDownloadFile = downloadFile; // Save original for chaining
-    downloadFile = function() {
+    downloadFile = function () {
         if (window.location.pathname === '/audio-enhancer' && enhancedAudioFile) {
             downloadEnhancedFile();
         } else {
@@ -1014,7 +1005,7 @@ document.addEventListener('DOMContentLoaded', function () {
         const popup = document.getElementById(popupId);
         if (popup) {
             popup.style.display = 'none';
-            document.body.style.overflow = 'auto';
+            document.body.style.overflow = '';
         }
     }
 
