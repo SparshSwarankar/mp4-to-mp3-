@@ -512,5 +512,3 @@ if __name__ == '__main__':
 
     signal.signal(signal.SIGINT, handle_sigint)
     app.run(host='0.0.0.0', port=5000, debug=True)
-    signal.signal(signal.SIGINT, handle_sigint)
-    app.run(host='0.0.0.0', port=5000, debug=True)
