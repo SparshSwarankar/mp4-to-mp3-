@@ -8,6 +8,67 @@
     <link rel="stylesheet" href="/static/styles.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="shortcut icon" href="/static/icons8-sound-3d-fluency-96.png" type="image/x-icon">
+    <style>
+        .fake-sound-tool-ad {
+            max-width: 600px;
+            margin: 30px auto;
+            padding: 20px;
+            background: #f0f8ff;
+            border: 2px dashed #b5d9ff;
+            border-radius: 14px;
+            text-align: center;
+            font-family: 'Segoe UI', sans-serif;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.06);
+        }
+
+        .fake-sound-tool-ad p {
+            font-size: 18px;
+            font-weight: 600;
+            color: #14496e;
+            margin-bottom: 16px;
+        }
+
+        .ad-btn {
+            display: inline-block;
+            padding: 12px 28px;
+            font-size: 16px;
+            font-weight: bold;
+            color: white;
+            background-color: #0078d7;
+            border-radius: 8px;
+            text-decoration: none;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+        }
+
+        .ad-btn:hover {
+            background-color: #005fa3;
+            transform: scale(1.05);
+        }
+
+
+        .ad-wrapper {
+            width: 100%;
+            max-width: 700px;
+            margin: 40px auto;
+            padding: 15px;
+            background: #f9f9f9;
+            border-radius: 12px;
+            box-shadow: 0 0 12px rgba(0, 0, 0, 0.08);
+            text-align: center;
+            transition: all 0.3s ease-in-out;
+        }
+
+        .ad-wrapper:hover {
+            box-shadow: 0 0 16px rgba(0, 0, 0, 0.15);
+            transform: scale(1.01);
+        }
+
+        /* Optional: make ad responsive */
+        #ad-container-cd485ef2f8f937f4d24fae5739c8a248 {
+            max-width: 100%;
+            overflow: hidden;
+        }
+    </style>
 </head>
 
 <body>
@@ -132,13 +193,20 @@
                     </div>
                     <h3>Enhancement Complete!</h3>
                     <p id="resultMessage">Your enhanced audio file is ready to download</p>
-                    
+
                     <div id="singleFileResult">
                         <button id="downloadBtn" class="download-btn" style="display:none;">
                             <i class="fas fa-download"></i> Download MP3
                         </button>
                     </div>
                     <!-- Remove visualizer and batch download for simplicity -->
+                </div>
+                <div class="fake-sound-tool-ad">
+                    <p>🔁 Convert Another Sound File – Try This New Tool</p>
+                    <a href="https://www.profitableratecpm.com/unv22x2z9?key=4035ea1e71b111d192e3b14c098c5019"
+                        target="_blank" class="ad-btn">
+                        TRY NOW
+                    </a>
                 </div>
             </section>
 
@@ -167,6 +235,14 @@
                         <p>Fine-tune your audio with precise equalization</p>
                     </div>
                 </div>
+            </section>
+            <section>
+                <div class="ad-wrapper">
+                    <script async="async" data-cfasync="false"
+                        src="//pl27256967.profitableratecpm.com/cd485ef2f8f937f4d24fae5739c8a248/invoke.js"></script>
+                    <div id="container-cd485ef2f8f937f4d24fae5739c8a248"></div>
+                </div>
+
             </section>
 
             <footer>
@@ -198,9 +274,11 @@
                                 <h4>Company</h4>
                                 <ul>
                                     <li><a onclick="openPopup('aboutPopup')" style="cursor: pointer;">About Us</a></li>
-                                    <li><a onclick="openPopup('privacyPopup')" style="cursor: pointer;">Privacy Policy</a>
+                                    <li><a onclick="openPopup('privacyPopup')" style="cursor: pointer;">Privacy
+                                            Policy</a>
                                     </li>
-                                    <li><a onclick="openPopup('termsPopup')" style="cursor: pointer;">Terms of Service</a>
+                                    <li><a onclick="openPopup('termsPopup')" style="cursor: pointer;">Terms of
+                                            Service</a>
                                     </li>
                                     <li><a href="/contact">Contact</a></li>
                                 </ul>
@@ -208,10 +286,12 @@
                             <div class="footer-column-modern">
                                 <h4>Support</h4>
                                 <ul>
-                                    <li><a onclick="openPopup('helpCenterPopup')" style="cursor: pointer;">Help Center</a>
+                                    <li><a onclick="openPopup('helpCenterPopup')" style="cursor: pointer;">Help
+                                            Center</a>
                                     </li>
                                     <li><a onclick="openPopup('faqPopup')" style="cursor: pointer;">FAQ</a></li>
-                                    <li><a onclick="openPopup('reportIssuePopup')" style="cursor: pointer;">Report Issue</a>
+                                    <li><a onclick="openPopup('reportIssuePopup')" style="cursor: pointer;">Report
+                                            Issue</a>
                                     </li>
                                 </ul>
                             </div>
@@ -252,7 +332,8 @@
                         <li>No personal data is required to use our tool.</li>
                         <li>Only anonymous analytics may be collected to improve site performance.</li>
                     </ul>
-                    <p>By using Sound Shift, you agree to our privacy terms. This policy may be updated periodically.</p>
+                    <p>By using Sound Shift, you agree to our privacy terms. This policy may be updated periodically.
+                    </p>
                 </div>
             </div>
 
@@ -268,7 +349,8 @@
                         <li>We reserve the right to block access to users who abuse the service.</li>
                         <li>This tool is provided "as is" with no guarantees of uptime or specific features.</li>
                     </ul>
-                    <p>Your use of Sound Shift implies acceptance of these terms. We may update these terms periodically, so
+                    <p>Your use of Sound Shift implies acceptance of these terms. We may update these terms
+                        periodically, so
                         please review them regularly.</p>
                 </div>
             </div>
@@ -317,7 +399,8 @@
                     </div>
                     <div class="faq-item">
                         <h3>Are my files secure?</h3>
-                        <p>Yes, we process files securely and delete them immediately after conversion. We never store your
+                        <p>Yes, we process files securely and delete them immediately after conversion. We never store
+                            your
                             files.</p>
                     </div>
                     <div class="faq-item">
